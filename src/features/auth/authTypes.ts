@@ -5,6 +5,11 @@ export type AuthUser = {
   email: string
   name?: string
   phone?: string
+  /**
+   * Future-safe: a single email can have multiple roles.
+   * `role` is the currently active/selected role context for this session.
+   */
+  roles?: UserRole[]
   role: UserRole
 }
 

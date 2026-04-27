@@ -357,9 +357,10 @@ function makeRangePoints(range: '7d' | '30d' | '90d') {
   return points.map(({ _key, ...rest }) => rest)
 }
 
-function makeLoginResponse(email: string, _password: string) {
+function makeLoginResponse(email: string, _password: string, selectedRole: UserRole) {
   const e = (email || '').toLowerCase()
-  const demoRole: UserRole = e === 'asabbir724@gmail.com' ? 'vendor' : email?.includes('service') ? 'service' : 'vendor'
+  // UI-role mode: always allow login; role is just a context selector.
+  const availableRoles: UserRole[] = e.includes('both') ? ['vendor', 'service'] : ['vendor', 'service']
 
   return {
     accessToken: 'static-demo-token',
@@ -367,7 +368,8 @@ function makeLoginResponse(email: string, _password: string) {
       id: 'user-1',
       email: email || 'demo@wak.app',
       name: 'Demo User',
-      role: demoRole,
+      role: selectedRole,
+      roles: availableRoles,
     },
   }
 }
@@ -438,8 +440,13 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
   try {
     // ——— Auth (JSON bodies) ———
     if (p.method === 'POST' && path === '/auth/login') {
-      const body = typeof p.body === 'string' ? (JSON.parse(p.body) as { email?: string; password?: string }) : (p.body as { email?: string; password?: string })
-      return { data: makeLoginResponse(String(body?.email || ''), String(body?.password || '')) }
+      const body =
+        typeof p.body === 'string'
+          ? (JSON.parse(p.body) as { email?: string; password?: string; role?: unknown })
+          : (p.body as { email?: string; password?: string; role?: unknown })
+
+      const selectedRole: UserRole = body?.role === 'service' ? 'service' : 'vendor'
+      return { data: makeLoginResponse(String(body?.email || ''), String(body?.password || ''), selectedRole) }
     }
     if (p.method === 'POST' && path === '/auth/register') {
       return { data: { ok: true, message: 'Registered (static)' } }

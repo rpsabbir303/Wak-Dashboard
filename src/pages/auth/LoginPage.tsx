@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { useLoginMutation } from '@/features/api/authApi'
 import { setCredentials } from '@/features/auth/authSlice'
 import { useAppDispatch } from '@/app/hooks'
 import { AuthCard } from '@/components/auth/AuthCard'
@@ -10,8 +9,6 @@ import { InputField } from '@/components/auth/InputField'
 import { PasswordInput } from '@/components/auth/PasswordInput'
 import { SubmitButton } from '@/components/auth/SubmitButton'
 import { Button } from '@/components/ui/button'
-import { isValidEmail, PASSWORD_MIN } from '@/lib/auth-validation'
-import { fetchErrorMessage } from '@/lib/fetch-error'
 import type { UserRole } from '@/features/auth/authTypes'
 
 function GoogleIcon(props: { className?: string }) {
@@ -30,47 +27,30 @@ export function LoginPage() {
   const location = useLocation()
   const from = (location.state as { from?: string } | null)?.from
   const dispatch = useAppDispatch()
-  const [login, { isLoading }] = useLoginMutation()
   const [role, setRole] = useState<UserRole>('vendor')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const e2: typeof errors = {}
-    if (!email) {
-      e2.email = 'Email is required'
-    } else if (!isValidEmail(email)) {
-      e2.email = 'Enter a valid email'
-    }
-    if (!password) {
-      e2.password = 'Password is required'
-    } else if (password.length < PASSWORD_MIN) {
-      e2.password = `Password must be at least ${PASSWORD_MIN} characters`
-    }
-    setErrors(e2)
-    if (Object.keys(e2).length) {
+    const selectedRole = role
+    dispatch(
+      setCredentials({
+        token: 'ui-role',
+        user: {
+          id: 'ui-user',
+          email: email.trim().toLowerCase(),
+          role: selectedRole,
+          roles: [selectedRole],
+        },
+      }),
+    )
+    toast.success('Welcome back')
+    if (selectedRole === 'vendor') {
+      void navigate(from && from.startsWith('/vendor') ? from : '/vendor/dashboard', { replace: true })
       return
     }
-    try {
-      const res = await login({ email: email.trim().toLowerCase(), password, role }).unwrap()
-      dispatch(setCredentials({ token: res.token, user: res.user }))
-      toast.success('Welcome back')
-      if (res.user.role === 'vendor') {
-        void navigate(from && from.startsWith('/vendor') ? from : '/vendor/dashboard', { replace: true })
-        return
-      }
-      if (res.user.role === 'service') {
-        void navigate('/service/dashboard', { replace: true })
-        return
-      }
-
-      // Unknown / removed roles should not access the app.
-      void navigate('/auth/login', { replace: true })
-    } catch (err) {
-      toast.error(fetchErrorMessage(err) ?? 'Sign in failed')
-    }
+    void navigate('/service/dashboard', { replace: true })
   }
 
   return (
@@ -130,7 +110,7 @@ export function LoginPage() {
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          error={errors.email}
+          error={undefined}
         />
         <PasswordInput
           name="password"
@@ -138,7 +118,7 @@ export function LoginPage() {
           label="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          error={errors.password}
+          error={undefined}
         />
         <div className="-mt-2 text-right">
           <Link
@@ -148,7 +128,7 @@ export function LoginPage() {
             Forgot password?
           </Link>
         </div>
-        <SubmitButton loading={isLoading}>Sign in</SubmitButton>
+        <SubmitButton loading={false}>Sign in</SubmitButton>
         <p className="text-center text-sm text-zinc-600">
           Don&apos;t have an account?{' '}
           <Link to="/auth/register" className="font-semibold text-[#895129] transition-colors hover:text-[#6f3f1f]">
