@@ -1,0 +1,56 @@
+import { Banknote, CheckCircle2, Timer, Wrench } from 'lucide-react'
+import type { DashboardOverview } from '@/features/api/types'
+import { ServicesOverview } from '@/components/dashboard/ServicesOverview'
+import { StatsCards, type StatCard } from './StatsCards'
+import { RevenueChart } from './RevenueChart'
+import { OrdersTable } from './OrdersTable'
+
+const fmtBdt = (n: number) =>
+  new Intl.NumberFormat('bn-BD', { style: 'currency', currency: 'BDT', maximumFractionDigits: 0 }).format(n)
+
+function pct(n: number) {
+  return `${Math.round(n * 100)}%`
+}
+
+export function ServiceDashboard({
+  data,
+  meta,
+}: {
+  data: DashboardOverview
+  meta: { productOrdersCount: number; serviceOrdersCount: number; serviceCompletedCount: number }
+}) {
+  const totalJobs = meta.serviceOrdersCount
+  const completionRate = totalJobs ? meta.serviceCompletedCount / totalJobs : 0
+  const inProgress = Math.max(0, totalJobs - meta.serviceCompletedCount)
+
+  const stats: StatCard[] = [
+    { key: 'rev', label: 'Total Revenue', value: fmtBdt(data.totalRevenue), icon: Banknote },
+    { key: 'jobs', label: 'Total Jobs', value: String(totalJobs), sub: 'jobs', icon: Wrench },
+    { key: 'active', label: 'In Progress', value: String(inProgress), sub: 'jobs', icon: Timer },
+    { key: 'rate', label: 'Completion Rate', value: pct(completionRate), sub: 'completed', icon: CheckCircle2 },
+  ]
+
+  return (
+    <div className="w-full space-y-6">
+      <StatsCards items={stats} />
+
+      <div className="w-full">
+        <RevenueChart weekly={data.revenueWeekly} monthly={data.revenueMonthly} mode="service" />
+      </div>
+
+      <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
+        <OrdersTable orders={data.recentOrders.filter((o) => o.type === 'service')} className="min-w-0" />
+        <section className="min-w-0 space-y-3">
+          <h2 className="text-foreground text-lg font-semibold">Service performance</h2>
+          <ServicesOverview
+            total={data.services.total}
+            active={data.services.active}
+            topName={data.services.topService.name}
+            topSales={data.services.topService.sales}
+          />
+        </section>
+      </div>
+    </div>
+  )
+}
+
