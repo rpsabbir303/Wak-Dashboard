@@ -3,6 +3,7 @@ import { GuestOnly, RequireAuth } from '@/app/auth-guards'
 import { AuthLayout } from '@/components/auth/AuthLayout'
 import { VendorLayout } from '@/components/layout/dashboard-layout'
 import { AdminLayout } from '@/components/layout/admin-layout'
+import { ServiceLayout } from '@/components/layout/ServiceLayout'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
@@ -39,6 +40,14 @@ import { ServicesPage as ServiceServicesPage } from '@/pages/service/ServicesPag
 import { BookingsPage as ServiceBookingsPage } from '@/pages/service/BookingsPage'
 import { EarningsPage as ServiceEarningsPage } from '@/pages/service/EarningsPage'
 import { SettingsPage as ServiceSettingsPage } from '@/pages/service/SettingsPage'
+import { AddServicePage } from '@/pages/service/AddServicePage'
+import { ServiceDetails } from '@/pages/service/ServiceDetails'
+import { AnalyticsPage as ServiceAnalyticsPage } from '@/pages/service/AnalyticsPage'
+import { CustomersManagementPage as ServiceCustomersManagementPage } from '@/pages/service/CustomersManagementPage'
+import { CustomerDetailsPage as ServiceCustomerDetailsPage } from '@/pages/service/CustomerDetailsPage'
+import { ControllerManagementPage as ServiceControllerManagementPage } from '@/pages/service/ControllerManagementPage'
+import { RequireServicePermission } from '@/app/RequireServicePermission'
+import { MessagesPage as ServiceMessagesPage } from '@/pages/service/MessagesPage'
 
 export const appRouter = createBrowserRouter([
   {
@@ -67,55 +76,75 @@ export const appRouter = createBrowserRouter([
       {
         element: <VendorLayout />,
         children: [
-          { index: true, element: <Navigate to="vendor/dashboard" replace /> },
           {
-            path: 'vendor',
+            element: <RequireRole role="vendor" />,
             children: [
-              { index: true, element: <Navigate to="dashboard" replace /> },
-              { path: 'dashboard', element: <DashboardPage /> },
-              { path: 'products', element: <ProductsListPage /> },
-              { path: 'products/create', element: <ProductFormPage mode="create" /> },
-              { path: 'products/edit/:id', element: <ProductFormPage mode="edit" /> },
-              { path: 'products/:id/edit', element: <ProductFormPage mode="edit" /> },
-              { path: 'products/:id', element: <ProductDetailsPage /> },
-              { path: 'services', element: <ServicesListPage /> },
-              { path: 'services/create', element: <ServiceCreatePage /> },
-              { path: 'services/edit/:id', element: <ServiceFormPage mode="edit" /> },
-              { path: 'services/:id', element: <ServiceDetailsPage /> },
-              { path: 'orders', element: <OrdersListPage /> },
-              { path: 'orders/:id', element: <OrderDetailsPage /> },
-              { path: 'customers', element: <CustomersManagementPage /> },
-              { path: 'customers/:id', element: <CustomerDetailsPage /> },
-              { path: 'delivery-requests', element: <DeliveryRequestsPage /> },
-              { path: 'earnings', element: <EarningsPage /> },
-              { path: 'messages', element: <MessagesPage /> },
-              { path: 'chat/:conversationId', element: <ChatPage /> },
-              { path: 'analytics', element: <AnalyticsPage /> },
-              { path: 'controllers', element: <ControllerManagement /> },
-              { path: 'settings', element: <SettingsPage /> },
-              { path: 'settings/profile', element: <SettingsPage /> },
-              { path: 'settings/security', element: <SettingsPage /> },
-              { path: 'settings/legal', element: <SettingsPage /> },
-              { path: 'settings/support', element: <SettingsPage /> },
-            ],
-          },
-          {
-            path: 'service',
-            children: [
-              { index: true, element: <Navigate to="dashboard" replace /> },
-              { path: 'dashboard', element: <ServiceDashboardPage /> },
-              { path: 'services', element: <ServiceServicesPage /> },
-              { path: 'bookings', element: <ServiceBookingsPage /> },
-              { path: 'earnings', element: <ServiceEarningsPage /> },
-              { path: 'messages', element: <MessagesPage /> },
-              { path: 'settings', element: <ServiceSettingsPage /> },
-              { path: 'settings/profile', element: <ServiceSettingsPage /> },
-              { path: 'settings/security', element: <ServiceSettingsPage /> },
-              { path: 'settings/legal', element: <ServiceSettingsPage /> },
-              { path: 'settings/support', element: <ServiceSettingsPage /> },
+              {
+                path: 'vendor',
+                children: [
+                  { index: true, element: <Navigate to="dashboard" replace /> },
+                  { path: 'dashboard', element: <DashboardPage /> },
+                  { path: 'products', element: <ProductsListPage /> },
+                  { path: 'products/create', element: <ProductFormPage mode="create" /> },
+                  { path: 'products/edit/:id', element: <ProductFormPage mode="edit" /> },
+                  { path: 'products/:id/edit', element: <ProductFormPage mode="edit" /> },
+                  { path: 'products/:id', element: <ProductDetailsPage /> },
+                  { path: 'services', element: <ServicesListPage /> },
+                  { path: 'services/create', element: <ServiceCreatePage /> },
+                  { path: 'services/edit/:id', element: <ServiceFormPage mode="edit" /> },
+                  { path: 'services/:id', element: <ServiceDetailsPage /> },
+                  { path: 'orders', element: <OrdersListPage /> },
+                  { path: 'orders/:id', element: <OrderDetailsPage /> },
+                  { path: 'customers', element: <CustomersManagementPage /> },
+                  { path: 'customers/:id', element: <CustomerDetailsPage /> },
+                  { path: 'delivery-requests', element: <DeliveryRequestsPage /> },
+                  { path: 'earnings', element: <EarningsPage /> },
+                  { path: 'messages', element: <MessagesPage /> },
+                  { path: 'chat/:conversationId', element: <ChatPage /> },
+                  { path: 'analytics', element: <AnalyticsPage /> },
+                  { path: 'controllers', element: <ControllerManagement /> },
+                  { path: 'settings', element: <SettingsPage /> },
+                  { path: 'settings/profile', element: <SettingsPage /> },
+                  { path: 'settings/security', element: <SettingsPage /> },
+                  { path: 'settings/legal', element: <SettingsPage /> },
+                  { path: 'settings/support', element: <SettingsPage /> },
+                ],
+              },
             ],
           },
           { path: 'driver/queue', element: <DriverQueuePage /> },
+        ],
+      },
+      {
+        element: <ServiceLayout />,
+        children: [
+          {
+            element: <RequireRole role="service_provider" />,
+            children: [
+              {
+                path: 'service',
+                children: [
+                  { index: true, element: <Navigate to="dashboard" replace /> },
+                  { path: 'dashboard', element: <RequireServicePermission permission="dashboard">{<ServiceDashboardPage />}</RequireServicePermission> },
+                  { path: 'services', element: <RequireServicePermission permission="services">{<ServiceServicesPage />}</RequireServicePermission> },
+                  { path: 'add-service', element: <AddServicePage /> },
+                  { path: 'bookings', element: <RequireServicePermission permission="bookings">{<ServiceBookingsPage />}</RequireServicePermission> },
+                  { path: 'analytics', element: <RequireServicePermission permission="analytics">{<ServiceAnalyticsPage />}</RequireServicePermission> },
+                  { path: 'earnings', element: <RequireServicePermission permission="earnings">{<ServiceEarningsPage />}</RequireServicePermission> },
+                  { path: 'customers', element: <RequireServicePermission permission="customers">{<ServiceCustomersManagementPage />}</RequireServicePermission> },
+                  { path: 'customer/:id', element: <ServiceCustomerDetailsPage /> },
+                  { path: 'controllers', element: <ServiceControllerManagementPage /> },
+                  { path: 'messages', element: <RequireServicePermission permission="messages">{<ServiceMessagesPage />}</RequireServicePermission> },
+                  { path: 'settings', element: <RequireServicePermission permission="settings"><ServiceSettingsPage /></RequireServicePermission> },
+                  { path: 'settings/profile', element: <RequireServicePermission permission="settings"><ServiceSettingsPage /></RequireServicePermission> },
+                  { path: 'settings/security', element: <RequireServicePermission permission="settings"><ServiceSettingsPage /></RequireServicePermission> },
+                  { path: 'settings/legal', element: <RequireServicePermission permission="settings"><ServiceSettingsPage /></RequireServicePermission> },
+                  { path: 'settings/support', element: <RequireServicePermission permission="settings"><ServiceSettingsPage /></RequireServicePermission> },
+                  { path: ':id', element: <ServiceDetails /> },
+                ],
+              },
+            ],
+          },
         ],
       },
       {

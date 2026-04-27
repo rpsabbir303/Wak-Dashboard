@@ -5,9 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import type { DashboardRecentOrder } from '@/features/api/types'
 import { DashboardOrderStatusBadge } from '@/components/dashboard/dashboard-status-badge'
 import { cn } from '@/lib/utils'
-
-const fmtBdt = (n: number) =>
-  new Intl.NumberFormat('bn-BD', { style: 'currency', currency: 'BDT', maximumFractionDigits: 0 }).format(n)
+import { formatCurrency } from '@/lib/formatCurrency'
 
 type Props = { orders: DashboardRecentOrder[]; isLoading?: boolean; className?: string }
 
@@ -45,7 +43,7 @@ export function RecentOrders({ orders, isLoading, className }: Props) {
                   <TableCell>
                     <DashboardOrderStatusBadge statusKey={o.statusKey} label={o.displayStatus} />
                   </TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">{fmtBdt(o.amount)}</TableCell>
+                  <TableCell className="text-right font-medium tabular-nums">{formatCurrency(o.amount)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

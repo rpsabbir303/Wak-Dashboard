@@ -1,5 +1,6 @@
 import { baseApi } from './baseApi'
 import type { Service, ServicePackage } from './types'
+import type { UserRole } from '@/features/auth/authTypes'
 
 const listTag = { type: 'Service' as const, id: 'LIST' as const }
 
@@ -11,6 +12,20 @@ export type CreateServiceInput = {
     standard: ServicePackage
     premium: ServicePackage
   }
+}
+
+export type CreateServiceProviderBody = {
+  title: string
+  category: string
+  description: string
+  services: string[]
+  technologies: string[]
+  image: string
+  pricingType: 'hourly' | 'fixed'
+  price: number
+  packageDetails: string[]
+  deliveryTime: string
+  role: Extract<UserRole, 'service_provider'>
 }
 
 export const serviceApi = baseApi.injectEndpoints({
@@ -42,8 +57,18 @@ export const serviceApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (_r, _e, arg) => [listTag, { type: 'Service' as const, id: arg.id }],
     }),
+    createServiceProviderService: build.mutation<Service, CreateServiceProviderBody>({
+      query: (body) => ({ url: '/api/services', method: 'POST', body }),
+      invalidatesTags: [listTag],
+    }),
   }),
   overrideExisting: false,
 })
 
-export const { useGetServicesQuery, useGetServiceQuery, useCreateServiceMutation, useUpdateServiceMutation } = serviceApi
+export const {
+  useGetServicesQuery,
+  useGetServiceQuery,
+  useCreateServiceMutation,
+  useUpdateServiceMutation,
+  useCreateServiceProviderServiceMutation,
+} = serviceApi

@@ -363,8 +363,14 @@ function makeLoginResponse(email: string, _password: string) {
     e === 'asabbir724@gmail.com'
       ? 'vendor'
       : e === 'rpsabbir.ahmed@gmail.com'
-        ? 'service'
-        : (email?.includes('admin') ? 'admin' : email?.includes('driver') ? 'driver' : email?.includes('service') ? 'service' : 'vendor') as UserRole
+        ? 'service_provider'
+        : (email?.includes('admin')
+            ? 'admin'
+            : email?.includes('driver')
+              ? 'driver'
+              : email?.includes('service')
+                ? 'service_provider'
+                : 'vendor') as UserRole
 
   return {
     accessToken: 'static-demo-token',
@@ -912,11 +918,11 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
       return { data: { ...analyticsSummary, productsCount: store.products.length, servicesCount: store.services.length } }
     }
     if (p.method === 'GET' && path === '/vendor/analytics/dashboard-stats') {
-      const role = (p.params as any)?.role === 'service' ? 'service' : 'vendor'
+      const role = (p.params as any)?.role === 'service_provider' ? 'service_provider' : 'vendor'
 
       const productOrders = store.productOrders.length
       const serviceOrders = store.serviceOrders.length
-      const totalOrdersJobs = role === 'service' ? serviceOrders : productOrders
+      const totalOrdersJobs = role === 'service_provider' ? serviceOrders : productOrders
 
       const totalRevenue = [...store.productOrders, ...store.serviceOrders].reduce(
         (a, o) => a + Number((o as any).total ?? 0),
@@ -933,7 +939,7 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
       const prevRevenue = totalRevenue * 0.88
       const prevOrders = totalOrdersJobs * 0.92
       const prevConv = 2.1
-      const conv = role === 'service' ? 3.2 : 2.6
+      const conv = role === 'service_provider' ? 3.2 : 2.6
 
       const stats: any = {
         totalRevenue: { value: totalRevenue, trend: safeTrend(totalRevenue, prevRevenue) },
@@ -955,6 +961,53 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
       }
 
       return { data: stats }
+    }
+
+    // ——— Service Provider create service (JSON body) ———
+    if (p.method === 'POST' && path === '/api/services') {
+      const b =
+        typeof p.body === 'string'
+          ? (JSON.parse(p.body) as any)
+          : (p.body as any)
+
+      if (String(b?.role ?? '') !== 'service_provider') {
+        return { error: { status: 403, data: { message: 'Role must be service_provider' } } }
+      }
+
+      const title = String(b?.title ?? '').trim()
+      const description = String(b?.description ?? '').trim()
+      const category = String(b?.category ?? '').trim()
+      const pricingType = (String(b?.pricingType ?? 'fixed') as 'hourly' | 'fixed')
+      const price = Number(b?.price ?? 0)
+      const deliveryTimeDays = Math.max(1, Math.floor(Number(b?.deliveryTime ?? 1)))
+      const imageUrl = String(b?.image ?? '').trim() || 'https://placehold.co/600x600/png?text=Service'
+      const services = Array.isArray(b?.services) ? b.services.map((x: any) => String(x).trim()).filter(Boolean) : []
+      const tech = Array.isArray(b?.technologies) ? b.technologies.map((x: any) => String(x).trim()).filter(Boolean) : []
+      const packageDetails = Array.isArray(b?.packageDetails) ? b.packageDetails.map((x: any) => String(x).trim()).filter(Boolean) : []
+
+      if (!title || !description || !category || !Number.isFinite(price) || price <= 0) {
+        return { error: { status: 400, data: { message: 'Invalid service payload' } } }
+      }
+
+      const s: Service = {
+        id: `s${++nextId}`,
+        title,
+        description,
+        about: description,
+        packages: [],
+        category,
+        pricingType,
+        price,
+        deliveryTimeDays,
+        imageUrl,
+        services,
+        technologies: { frontend: tech.join(', '), backend: '', database: '' },
+        benefits: packageDetails,
+        providerName: 'Demo Provider',
+        rating: 4.6,
+      }
+      store.services.push(s)
+      return { data: s }
     }
     if (p.method === 'GET' && path === '/vendor/analytics/revenue-chart') {
       const range = ((p.params as any)?.range as '7d' | '30d' | '90d') || '7d'

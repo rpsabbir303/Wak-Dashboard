@@ -3,9 +3,7 @@ import { Banknote, ShoppingCart, Truck, Wrench } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-
-const fmtBdt = (n: number) =>
-  new Intl.NumberFormat('bn-BD', { style: 'currency', currency: 'BDT', maximumFractionDigits: 0 }).format(n)
+import { formatCurrency } from '@/lib/formatCurrency'
 
 type Stat = {
   key: string
@@ -33,7 +31,7 @@ export function DashboardStats({
   className,
 }: Props) {
   const items: Stat[] = [
-    { key: 'rev', label: 'Total Revenue', value: fmtBdt(totalRevenue), sub: undefined, icon: Banknote },
+    { key: 'rev', label: 'Total Revenue', value: formatCurrency(totalRevenue), sub: undefined, icon: Banknote },
     { key: 'ord', label: 'Total Orders', value: String(totalOrders), sub: 'orders', icon: ShoppingCart },
     { key: 'del', label: 'Active Deliveries', value: String(activeDeliveries), sub: 'on the road', icon: Truck },
     { key: 'svc', label: 'Active Services', value: String(activeServices), sub: 'listings', icon: Wrench },

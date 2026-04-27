@@ -31,7 +31,7 @@ function mapUser(raw: unknown): AuthUser | null {
       : r === 'driver'
         ? 'driver'
         : r === 'service' || r === 'service_provider'
-          ? 'service'
+          ? 'service_provider'
           : 'vendor'
   if (!email && !id) {
     return null
@@ -58,7 +58,7 @@ export function normalizeAuthResponse(body: unknown): AuthResponse {
         : r === 'driver'
           ? 'driver'
           : r === 'service' || r === 'service_provider'
-            ? 'service'
+            ? 'service_provider'
             : 'vendor'
     user = { id: emailOnly, email: emailOnly, role }
   }
@@ -78,7 +78,7 @@ export type RegisterBody = {
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    login: build.mutation<AuthResponse, { email: string; password: string }>({
+    login: build.mutation<AuthResponse, { email: string; password: string; role: UserRole }>({
       query: (body) => ({ url: '/auth/login', method: 'POST', body }),
       transformResponse: (raw: unknown) => normalizeAuthResponse(raw),
     }),

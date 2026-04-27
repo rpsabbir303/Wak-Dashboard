@@ -3,13 +3,11 @@ import { Banknote, Package, ShoppingCart, Truck } from 'lucide-react'
 import type { DashboardOverview } from '@/features/api/types'
 import { ProductsOverview } from '@/components/dashboard/ProductsOverview'
 import { cn } from '@/lib/utils'
+import { formatCurrency } from '@/lib/formatCurrency'
 import { StatsCards, type StatCard } from './StatsCards'
 import { RevenueChart } from './RevenueChart'
 import { OrdersTable } from './OrdersTable'
 import { DeliveriesCard } from './DeliveriesCard'
-
-const fmtBdt = (n: number) =>
-  new Intl.NumberFormat('bn-BD', { style: 'currency', currency: 'BDT', maximumFractionDigits: 0 }).format(n)
 
 export function VendorDashboard({
   data,
@@ -17,7 +15,7 @@ export function VendorDashboard({
   data: DashboardOverview
 }) {
   const stats: StatCard[] = [
-    { key: 'rev', label: 'Total Revenue', value: fmtBdt(data.totalRevenue), icon: Banknote },
+    { key: 'rev', label: 'Total Revenue', value: formatCurrency(data.totalRevenue), icon: Banknote },
     { key: 'ord', label: 'Total Orders', value: String(data.totalOrders), sub: 'orders', icon: ShoppingCart },
     { key: 'del', label: 'Active Deliveries', value: String(data.activeDeliveries), sub: 'on the road', icon: Truck },
     { key: 'prod', label: 'Total Products', value: String(data.products.total), sub: 'listings', icon: Package },

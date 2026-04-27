@@ -8,10 +8,10 @@ import { useDashboardViewModel } from '@/features/dashboard/useDashboardViewMode
 import { VendorDashboard } from './VendorDashboard'
 import { ServiceDashboard } from './ServiceDashboard'
 
-type Role = 'vendor' | 'service'
+type Role = 'vendor' | 'service_provider'
 
 function normalizeRole(v: unknown): Role | null {
-  return v === 'service' ? 'service' : v === 'vendor' ? 'vendor' : null
+  return v === 'service_provider' ? 'service_provider' : v === 'vendor' ? 'vendor' : null
 }
 
 export function DashboardOverview() {
@@ -63,7 +63,7 @@ export function DashboardOverview() {
       )}
 
       {role === 'vendor' && <VendorDashboard data={data} />}
-      {role === 'service' && <ServiceDashboard data={data} meta={meta} />}
+      {role === 'service_provider' && <ServiceDashboard data={data} meta={meta} />}
     </div>
   )
 }
@@ -73,7 +73,7 @@ function PageHeading({ role }: { role: Role | null }) {
     <div className="space-y-1">
       <h1 className="text-2xl font-semibold tracking-tight">Dashboard overview</h1>
       <p className="text-muted-foreground text-sm">
-        {role === 'service'
+        {role === 'service_provider'
           ? 'Service performance: jobs and earnings in one place.'
           : 'Business performance: products and deliveries in one place.'}
       </p>

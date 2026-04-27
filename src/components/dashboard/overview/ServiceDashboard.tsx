@@ -1,12 +1,10 @@
 import { Banknote, CheckCircle2, Timer, Wrench } from 'lucide-react'
 import type { DashboardOverview } from '@/features/api/types'
 import { ServicesOverview } from '@/components/dashboard/ServicesOverview'
+import { formatCurrency } from '@/lib/formatCurrency'
 import { StatsCards, type StatCard } from './StatsCards'
 import { RevenueChart } from './RevenueChart'
 import { OrdersTable } from './OrdersTable'
-
-const fmtBdt = (n: number) =>
-  new Intl.NumberFormat('bn-BD', { style: 'currency', currency: 'BDT', maximumFractionDigits: 0 }).format(n)
 
 function pct(n: number) {
   return `${Math.round(n * 100)}%`
@@ -24,7 +22,7 @@ export function ServiceDashboard({
   const inProgress = Math.max(0, totalJobs - meta.serviceCompletedCount)
 
   const stats: StatCard[] = [
-    { key: 'rev', label: 'Total Revenue', value: fmtBdt(data.totalRevenue), icon: Banknote },
+    { key: 'rev', label: 'Total Revenue', value: formatCurrency(data.totalRevenue), icon: Banknote },
     { key: 'jobs', label: 'Total Jobs', value: String(totalJobs), sub: 'jobs', icon: Wrench },
     { key: 'active', label: 'In Progress', value: String(inProgress), sub: 'jobs', icon: Timer },
     { key: 'rate', label: 'Completion Rate', value: pct(completionRate), sub: 'completed', icon: CheckCircle2 },

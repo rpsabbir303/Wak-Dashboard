@@ -24,23 +24,13 @@ function GoogleIcon(props: { className?: string }) {
   )
 }
 
-function AppleIcon(props: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden className={props.className}>
-      <path
-        fill="currentColor"
-        d="M16.87 12.86c.03 3.22 2.82 4.29 2.85 4.3-.02.08-.44 1.52-1.46 3-.88 1.29-1.8 2.58-3.24 2.6-1.41.03-1.86-.84-3.47-.84-1.6 0-2.11.81-3.44.87-1.39.05-2.45-1.4-3.34-2.69-1.83-2.65-3.23-7.48-1.35-10.74.93-1.62 2.6-2.64 4.41-2.67 1.37-.03 2.67.92 3.47.92.8 0 2.31-1.14 3.89-.97.66.03 2.5.27 3.68 2.03-.1.06-2.2 1.29-2.18 3.86ZM14.38 3.6c.73-.88 1.22-2.1 1.08-3.32-1.05.04-2.32.7-3.07 1.58-.68.79-1.28 2.06-1.12 3.27 1.17.09 2.38-.6 3.11-1.53Z"
-      />
-    </svg>
-  )
-}
-
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: string } | null)?.from
   const dispatch = useAppDispatch()
   const [login, { isLoading }] = useLoginMutation()
+  const [role, setRole] = useState<'vendor' | 'service_provider'>('vendor')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
@@ -63,19 +53,19 @@ export function LoginPage() {
       return
     }
     try {
-      const res = await login({ email: email.trim().toLowerCase(), password }).unwrap()
+      const res = await login({ email: email.trim().toLowerCase(), password, role }).unwrap()
       dispatch(setCredentials({ token: res.token, user: res.user }))
       toast.success('Welcome back')
       if (res.user.role === 'vendor') {
         void navigate(from && from.startsWith('/vendor') ? from : '/vendor/dashboard', { replace: true })
         return
       }
-      if (res.user.role === 'service') {
+      if (res.user.role === 'service_provider') {
         void navigate('/service/dashboard', { replace: true })
         return
       }
 
-      // Unknown / removed roles (e.g., admin) should not access the app.
+      // Unknown / removed roles should not access the app.
       void navigate('/auth/login', { replace: true })
     } catch (err) {
       toast.error(fetchErrorMessage(err) ?? 'Sign in failed')
@@ -95,14 +85,6 @@ export function LoginPage() {
           <GoogleIcon className="mr-2 size-4 text-zinc-700" />
           Continue with Google
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-12 rounded-xl border-gray-200 bg-white/70 transition-all duration-200 hover:scale-[1.02]"
-        >
-          <AppleIcon className="mr-2 size-4 text-zinc-700" />
-          Continue with Apple
-        </Button>
       </div>
 
       <div className="my-6 flex items-center">
@@ -112,6 +94,33 @@ export function LoginPage() {
       </div>
 
       <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
+        <div className="grid gap-2">
+          <div className="text-sm font-medium text-zinc-700">I am a</div>
+          <div className="grid grid-cols-2 rounded-xl border border-gray-200 bg-white/70 p-1">
+            <button
+              type="button"
+              onClick={() => setRole('vendor')}
+              className={[
+                'h-10 rounded-lg text-sm font-semibold transition-colors',
+                role === 'vendor' ? 'bg-[#895129] text-white' : 'bg-transparent text-zinc-700 hover:bg-white',
+              ].join(' ')}
+            >
+              Vendor
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole('service_provider')}
+              className={[
+                'h-10 rounded-lg text-sm font-semibold transition-colors',
+                role === 'service_provider'
+                  ? 'bg-[#895129] text-white'
+                  : 'bg-transparent text-zinc-700 hover:bg-white',
+              ].join(' ')}
+            >
+              Service Provider
+            </button>
+          </div>
+        </div>
         <InputField
           id="email"
           name="email"
@@ -129,15 +138,15 @@ export function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           error={errors.password}
-          labelRight={
-            <Link
-              to="/auth/forgot-password"
-              className="text-xs font-semibold text-[#895129] transition-colors hover:text-[#6f3f1f] hover:underline"
-            >
-              Forgot password?
-            </Link>
-          }
         />
+        <div className="-mt-2 text-right">
+          <Link
+            to="/auth/forgot-password"
+            className="text-xs font-semibold text-[#895129] transition-colors hover:text-[#6f3f1f] hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <SubmitButton loading={isLoading}>Sign in</SubmitButton>
         <p className="text-center text-sm text-zinc-600">
           Don&apos;t have an account?{' '}

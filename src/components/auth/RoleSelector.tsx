@@ -14,7 +14,7 @@ export function RoleSelector({ value, onChange, disabled }: Props) {
         {(
           [
             { role: 'vendor' as const, label: 'Vendor' },
-            { role: 'service' as const, label: 'Service Provider' },
+            { role: 'service_provider' as const, label: 'Service Provider' },
           ] satisfies { role: UserRole; label: string }[]
         ).map((o) => {
           const selected = value === o.role

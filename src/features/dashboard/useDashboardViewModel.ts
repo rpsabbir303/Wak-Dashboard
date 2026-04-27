@@ -17,7 +17,7 @@ import type {
 import { DASHBOARD_STATIC_DEMO } from './static-demo'
 
 const demoEnabled = () => import.meta.env.VITE_DASHBOARD_DEMO !== 'false'
-type Role = 'vendor' | 'service'
+type Role = 'vendor' | 'service_provider'
 
 function mapProductToRecent(o: ProductOrder): DashboardRecentOrder {
   const m = mapProductStatus(o.status)
@@ -107,13 +107,13 @@ function buildFromAnalytics(
   const series = a.revenueByDay.map((day) => ({
     label: day.date,
     product: role === 'vendor' ? day.amount : 0,
-    service: role === 'service' ? day.amount : 0,
+    service: role === 'service_provider' ? day.amount : 0,
   }))
   return {
     totalRevenue: role === 'vendor' ? a.productSales : a.serviceEarnings,
     totalOrders: role === 'vendor' ? a.productOrders : a.serviceOrders,
     activeDeliveries: role === 'vendor' ? a.pendingDeliveries : 0,
-    activeServices: role === 'service' ? a.servicesCount : 0,
+    activeServices: role === 'service_provider' ? a.servicesCount : 0,
     revenueWeekly: series.length ? series : DASHBOARD_STATIC_DEMO.revenueWeekly,
     revenueMonthly: DASHBOARD_STATIC_DEMO.revenueMonthly.map((p) =>
       role === 'vendor' ? { ...p, service: 0 } : { ...p, product: 0 },
@@ -155,7 +155,7 @@ function augment(
     out.activeDeliveriesList = toActiveList(d)
     out.activeDeliveries = out.activeDeliveriesList.length
   }
-  if (role === 'service') {
+  if (role === 'service_provider') {
     out.activeDeliveriesList = []
     out.activeDeliveries = 0
   }
