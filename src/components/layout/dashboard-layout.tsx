@@ -13,12 +13,10 @@ import {
   Settings,
   ShoppingCart,
   Wallet,
-  Tractor,
   Truck,
   Users,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { LogoutModal } from '@/components/common/LogoutModal'
 import { useAppDispatch } from '@/app/hooks'
 import { logout } from '@/features/auth/authSlice'
@@ -39,36 +37,11 @@ const vendorNav: MenuItem[] = [
   { to: '/vendor/controllers', label: 'Controller management', icon: Shield },
 ]
 
-const driverNav: MenuItem[] = [{ to: '/driver/queue', label: 'Driver queue', icon: Tractor }]
-
-function NavList({ items, onItemClick }: { items: MenuItem[]; onItemClick?: () => void }) {
-  return (
-    <nav className="flex flex-col gap-1 px-2">
-      {items.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          className={({ isActive }) =>
-            cn(
-              'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition',
-              isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-            )
-          }
-          onClick={() => onItemClick?.()}
-        >
-          <item.icon className="size-4" />
-          {item.label}
-        </NavLink>
-      ))}
-    </nav>
-  )
-}
-
 export function VendorLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const { data: profile, isError } = useGetProfileQuery()
+  const { isError } = useGetProfileQuery()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [openSettings, setOpenSettings] = useState(false)
@@ -77,8 +50,6 @@ export function VendorLayout() {
     connectSocket()
   }, [])
 
-  const isDriver = profile?.role === 'driver' || new URLSearchParams(location.search).get('role') === 'driver'
-  const showDriverSection = isDriver
   const settingsActive = location.pathname.startsWith('/vendor/settings')
 
   useEffect(() => {
@@ -114,195 +85,93 @@ export function VendorLayout() {
           </div>
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="min-h-0 flex-1 overflow-y-auto">
-              {showDriverSection ? (
-                <>
-                  <nav className="flex flex-col gap-1 px-2">
-                    {vendorNav.map((item) => {
-                      if (item.to !== '/vendor/controllers') {
-                        return (
-                          <NavLink
-                            key={item.to}
-                            to={item.to}
-                            className={({ isActive }) =>
-                              cn(
-                                'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition',
-                                isActive
-                                  ? 'bg-primary/10 text-primary'
-                                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                              )
-                            }
-                            onClick={() => setMobileOpen(false)}
-                          >
-                            <item.icon className="size-4" />
-                            {item.label}
-                          </NavLink>
-                        )
-                      }
-
-                      return (
-                        <div key={item.to} className="space-y-1">
-                          <NavLink
-                            to={item.to}
-                            className={({ isActive }) =>
-                              cn(
-                                'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition',
-                                isActive
-                                  ? 'bg-primary/10 text-primary'
-                                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                              )
-                            }
-                            onClick={() => setMobileOpen(false)}
-                          >
-                            <item.icon className="size-4" />
-                            {item.label}
-                          </NavLink>
-
-                          <button
-                            type="button"
-                            className={cn(
-                              'flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium transition',
-                              settingsActive
-                                ? 'bg-primary/10 text-primary'
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                            )}
-                            onClick={() => setOpenSettings((v) => !v)}
-                          >
-                            <span className="flex items-center gap-2">
-                              <Settings className="size-4" />
-                              Settings
-                            </span>
-                            {openSettings ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-                          </button>
-
-                          <div
-                            className={cn(
-                              'overflow-hidden transition-[max-height,opacity] duration-200 ease-out',
-                              openSettings ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0',
-                            )}
-                          >
-                            <div className="flex flex-col gap-0.5 py-1">
-                              {[
-                                { to: '/vendor/settings/profile', label: 'Profile' },
-                                { to: '/vendor/settings/security', label: 'Security' },
-                                { to: '/vendor/settings/legal', label: 'Legal' },
-                                { to: '/vendor/settings/support', label: 'Support' },
-                              ].map((c) => (
-                                <NavLink
-                                  key={c.to}
-                                  to={c.to}
-                                  className={({ isActive }) =>
-                                    cn(
-                                      'flex items-center gap-2 rounded-md py-1.5 text-xs font-medium transition',
-                                      'pl-8 pr-3',
-                                      isActive
-                                        ? 'bg-primary/10 text-primary'
-                                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                                    )
-                                  }
-                                  onClick={() => setMobileOpen(false)}
-                                >
-                                  <Circle className="size-2 fill-current opacity-70" />
-                                  {c.label}
-                                </NavLink>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </nav>
-                  <Separator className="my-2" />
-                  <NavList items={driverNav} onItemClick={() => setMobileOpen(false)} />
-                </>
-              ) : (
-                <nav className="flex flex-col gap-1 px-2">
-                  {vendorNav.map((item) => {
-                    if (item.to !== '/vendor/controllers') {
-                      return (
-                        <NavLink
-                          key={item.to}
-                          to={item.to}
-                          className={({ isActive }) =>
-                            cn(
-                              'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition',
-                              isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                            )
-                          }
-                          onClick={() => setMobileOpen(false)}
-                        >
-                          <item.icon className="size-4" />
-                          {item.label}
-                        </NavLink>
-                      )
-                    }
-
+              <nav className="flex flex-col gap-1 px-2">
+                {vendorNav.map((item) => {
+                  if (item.to !== '/vendor/controllers') {
                     return (
-                      <div key={item.to} className="space-y-1">
-                        <NavLink
-                          to={item.to}
-                          className={({ isActive }) =>
-                            cn(
-                              'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition',
-                              isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                            )
-                          }
-                          onClick={() => setMobileOpen(false)}
-                        >
-                          <item.icon className="size-4" />
-                          {item.label}
-                        </NavLink>
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        className={({ isActive }) =>
+                          cn(
+                            'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition',
+                            isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                          )
+                        }
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        <item.icon className="size-4" />
+                        {item.label}
+                      </NavLink>
+                    )
+                  }
 
-                        <button
-                          type="button"
-                          className={cn(
-                            'flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium transition',
-                            settingsActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                          )}
-                          onClick={() => setOpenSettings((v) => !v)}
-                        >
-                          <span className="flex items-center gap-2">
-                            <Settings className="size-4" />
-                            Settings
-                          </span>
-                          {openSettings ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-                        </button>
+                  return (
+                    <div key={item.to} className="space-y-1">
+                      <NavLink
+                        to={item.to}
+                        className={({ isActive }) =>
+                          cn(
+                            'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition',
+                            isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                          )
+                        }
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        <item.icon className="size-4" />
+                        {item.label}
+                      </NavLink>
 
-                        <div
-                          className={cn(
-                            'overflow-hidden transition-[max-height,opacity] duration-200 ease-out',
-                            openSettings ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0',
-                          )}
-                        >
-                          <div className="flex flex-col gap-0.5 py-1">
-                            {[
-                              { to: '/vendor/settings/profile', label: 'Profile' },
-                              { to: '/vendor/settings/security', label: 'Security' },
-                              { to: '/vendor/settings/legal', label: 'Legal' },
-                              { to: '/vendor/settings/support', label: 'Support' },
-                            ].map((c) => (
-                              <NavLink
-                                key={c.to}
-                                to={c.to}
-                                className={({ isActive }) =>
-                                  cn(
-                                    'flex items-center gap-2 rounded-md py-1.5 text-xs font-medium transition',
-                                    'pl-8 pr-3',
-                                    isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                                  )
-                                }
-                                onClick={() => setMobileOpen(false)}
-                              >
-                                <Circle className="size-2 fill-current opacity-70" />
-                                {c.label}
-                              </NavLink>
-                            ))}
-                          </div>
+                      <button
+                        type="button"
+                        className={cn(
+                          'flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium transition',
+                          settingsActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                        )}
+                        onClick={() => setOpenSettings((v) => !v)}
+                      >
+                        <span className="flex items-center gap-2">
+                          <Settings className="size-4" />
+                          Settings
+                        </span>
+                        {openSettings ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+                      </button>
+
+                      <div
+                        className={cn(
+                          'overflow-hidden transition-[max-height,opacity] duration-200 ease-out',
+                          openSettings ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0',
+                        )}
+                      >
+                        <div className="flex flex-col gap-0.5 py-1">
+                          {[
+                            { to: '/vendor/settings/profile', label: 'Profile' },
+                            { to: '/vendor/settings/security', label: 'Security' },
+                            { to: '/vendor/settings/legal', label: 'Legal' },
+                            { to: '/vendor/settings/support', label: 'Support' },
+                          ].map((c) => (
+                            <NavLink
+                              key={c.to}
+                              to={c.to}
+                              className={({ isActive }) =>
+                                cn(
+                                  'flex items-center gap-2 rounded-md py-1.5 text-xs font-medium transition',
+                                  'pl-8 pr-3',
+                                  isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                )
+                              }
+                              onClick={() => setMobileOpen(false)}
+                            >
+                              <Circle className="size-2 fill-current opacity-70" />
+                              {c.label}
+                            </NavLink>
+                          ))}
                         </div>
                       </div>
-                    )
-                  })}
-                </nav>
-              )}
+                    </div>
+                  )
+                })}
+              </nav>
             </div>
 
             <div className="border-t p-2">

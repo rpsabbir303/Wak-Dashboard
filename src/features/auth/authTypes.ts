@@ -1,4 +1,4 @@
-export type UserRole = 'vendor' | 'service_provider' | 'admin' | 'driver'
+export type UserRole = 'vendor' | 'service'
 
 export type AuthUser = {
   id: string

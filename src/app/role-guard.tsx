@@ -1,19 +1,18 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAppSelector } from '@/app/hooks'
+import type { UserRole } from '@/features/auth/authTypes'
 
-type AppRole = 'admin' | 'vendor' | 'service_provider' | 'driver'
+type AppRole = UserRole
 
 const roleHome: Record<AppRole, string> = {
-  admin: '/admin/dashboard',
   vendor: '/vendor/dashboard',
-  service_provider: '/service/dashboard',
-  driver: '/driver/queue',
+  service: '/service/dashboard',
 }
 
 export function RequireRole({ role }: { role: AppRole }) {
   const loc = useLocation()
   const user = useAppSelector((s) => s.auth.user)
-  const urlRole = new URLSearchParams(loc.search).get('role') as AppRole | null
+  const urlRole = (new URLSearchParams(loc.search).get('role') as AppRole | null) ?? null
 
   const actualRole = (user?.role as AppRole | undefined) ?? (urlRole ?? undefined)
 

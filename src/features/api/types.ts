@@ -3,7 +3,7 @@ export type UserProfile = {
   firstName?: string
   lastName?: string
   email?: string
-  role?: string
+  role?: import('@/features/auth/authTypes').UserRole
   phone?: string
   address?: string
   country?: string
@@ -376,7 +376,7 @@ export type AdminUser = {
   id: string
   name: string
   email: string
-  role: 'vendor' | 'service' | 'admin' | 'driver'
+  role: import('@/features/auth/authTypes').UserRole
   status: 'active' | 'suspended' | 'pending_approval'
   createdAt: string
 }

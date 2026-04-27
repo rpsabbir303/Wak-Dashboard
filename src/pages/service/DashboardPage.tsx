@@ -182,10 +182,11 @@ export function DashboardPage() {
                     border: '1px solid hsl(214.3 31.8% 91.4%)',
                     background: 'hsl(0 0% 100%)',
                   }}
-                  formatter={(value: unknown, name: string) => {
-                    if (name === 'earnings' && typeof value === 'number') return [formatCurrency(value), 'Earnings']
-                    if (name === 'bookings' && typeof value === 'number') return [String(value), 'Bookings']
-                    return [String(value), name]
+                  formatter={(value: unknown, name?: string | number) => {
+                    const key = String(name ?? '')
+                    if (key === 'earnings' && typeof value === 'number') return [formatCurrency(value), 'Earnings']
+                    if (key === 'bookings' && typeof value === 'number') return [String(value), 'Bookings']
+                    return [String(value), key]
                   }}
                 />
                 <Line

@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -7,17 +6,12 @@ import { useGetProfileQuery } from '@/features/api/userApi'
 import { useDashboardViewModel } from '@/features/dashboard/useDashboardViewModel'
 import { VendorDashboard } from './VendorDashboard'
 import { ServiceDashboard } from './ServiceDashboard'
-
-type Role = 'vendor' | 'service_provider'
-
-function normalizeRole(v: unknown): Role | null {
-  return v === 'service_provider' ? 'service_provider' : v === 'vendor' ? 'vendor' : null
-}
+import type { UserRole } from '@/features/auth/authTypes'
 
 export function DashboardOverview() {
-  const authRole = useSelector((s: RootState) => s.auth.user?.role)
+  const authRole: UserRole | undefined = useSelector((s: RootState) => s.auth.user?.role)
   const { data: profile } = useGetProfileQuery()
-  const role = useMemo(() => normalizeRole(authRole) ?? normalizeRole(profile?.role), [authRole, profile?.role])
+  const role: UserRole | null = authRole ?? profile?.role ?? null
 
   const { data, meta, isLoading, isError, isDemo, refetch } = useDashboardViewModel(role)
 
@@ -63,17 +57,17 @@ export function DashboardOverview() {
       )}
 
       {role === 'vendor' && <VendorDashboard data={data} />}
-      {role === 'service_provider' && <ServiceDashboard data={data} meta={meta} />}
+      {role === 'service' && <ServiceDashboard data={data} meta={meta} />}
     </div>
   )
 }
 
-function PageHeading({ role }: { role: Role | null }) {
+function PageHeading({ role }: { role: UserRole | null }) {
   return (
     <div className="space-y-1">
       <h1 className="text-2xl font-semibold tracking-tight">Dashboard overview</h1>
       <p className="text-muted-foreground text-sm">
-        {role === 'service_provider'
+        {role === 'service'
           ? 'Service performance: jobs and earnings in one place.'
           : 'Business performance: products and deliveries in one place.'}
       </p>

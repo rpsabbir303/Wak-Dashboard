@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { toast } from 'sonner'
@@ -9,20 +8,17 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useGetProfileQuery } from '@/features/api/userApi'
 import { useCreateServiceMutation, useGetServiceQuery, useUpdateServiceMutation } from '@/features/api/serviceApi'
 import { ServiceForm, type ServiceFormValues } from '@/components/services/ServiceForm'
+import type { UserRole } from '@/features/auth/authTypes'
 
 type Props = { mode: 'create' | 'edit' }
-
-function normalizeRole(v: unknown): 'vendor' | 'service' | null {
-  return v === 'service' ? 'service' : v === 'vendor' ? 'vendor' : null
-}
 
 export function ServiceFormPage({ mode }: Props) {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const authRole = useSelector((s: RootState) => s.auth.user?.role)
+  const authRole: UserRole | undefined = useSelector((s: RootState) => s.auth.user?.role)
   const { data: profile } = useGetProfileQuery()
-  const role = useMemo(() => normalizeRole(authRole) ?? normalizeRole(profile?.role), [authRole, profile?.role])
+  const role: UserRole | null = authRole ?? profile?.role ?? null
 
   // service-provider-only
   if (role && role !== 'service') {

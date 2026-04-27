@@ -1,16 +1,13 @@
 import { useMemo, useState } from 'react'
-import { useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   useGetDeliveryRequestsQuery,
-  useGetDriverQueueQuery,
   useRejectDeliveryMutation,
   useUpdateDeliveryStatusMutation,
 } from '@/features/api/deliveryApi'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Delivery, DeliveryDriverStatus } from '@/features/api/types'
-import { useGetProfileQuery } from '@/features/api/userApi'
 import { useDeliveryRealtime } from '@/hooks/useDeliveryRealtime'
 import { DeliveryTabs } from '@/components/delivery-management/DeliveryTabs'
 import { DeliveryDetailsModal } from '@/components/delivery-management/DeliveryDetailsModal'
@@ -28,10 +25,6 @@ type Filters = {
 }
 
 export function DeliveryRequestsPage() {
-  const location = useLocation()
-  const { data: profile } = useGetProfileQuery()
-  const isDriver = profile?.role === 'driver' || new URLSearchParams(location.search).get('role') === 'driver'
-
   // Real-time readiness (socket is stubbed in demo mode).
   // listenDeliveryUpdates(): prepared alias for future custom subscriptions.
   function listenDeliveryUpdates() {
@@ -39,12 +32,10 @@ export function DeliveryRequestsPage() {
   }
   listenDeliveryUpdates()
 
-  const vendorQ = useGetDeliveryRequestsQuery(undefined, { skip: isDriver })
-  const driverQ = useGetDriverQueueQuery(undefined, { skip: !isDriver })
-  const { data, isLoading, isError } = isDriver ? driverQ : vendorQ
+  const { data, isLoading, isError } = useGetDeliveryRequestsQuery()
 
-  const productOrdersQ = useGetProductOrdersQuery(undefined, { skip: isDriver })
-  const serviceOrdersQ = useGetServiceOrdersQuery(undefined, { skip: isDriver })
+  const productOrdersQ = useGetProductOrdersQuery()
+  const serviceOrdersQ = useGetServiceOrdersQuery()
 
   const [update, { isLoading: updating }] = useUpdateDeliveryStatusMutation()
   const [reject, { isLoading: rejecting }] = useRejectDeliveryMutation()
@@ -156,7 +147,7 @@ export function DeliveryRequestsPage() {
         <CardHeader>
           <CardTitle>Requests</CardTitle>
           <CardDescription>
-            {isDriver ? 'Driver view: accept and update local deliveries.' : 'Vendor view: track local + international.'}
+            Vendor view: track local + international.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -214,7 +205,7 @@ export function DeliveryRequestsPage() {
             <DeliveryTabs
               local={activeTab === 'local' ? paged : local}
               international={activeTab === 'international' ? paged : international}
-              isDriver={isDriver}
+              isDriver={false}
               value={activeTab}
               onValueChange={(v) => {
                 setActiveTab(v)

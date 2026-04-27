@@ -15,9 +15,9 @@ import type {
   ServiceOrder,
 } from '@/features/api/types'
 import { DASHBOARD_STATIC_DEMO } from './static-demo'
+import type { UserRole } from '@/features/auth/authTypes'
 
 const demoEnabled = () => import.meta.env.VITE_DASHBOARD_DEMO !== 'false'
-type Role = 'vendor' | 'service_provider'
 
 function mapProductToRecent(o: ProductOrder): DashboardRecentOrder {
   const m = mapProductStatus(o.status)
@@ -76,7 +76,7 @@ function sumTotals(orders: Array<{ total: number }> | undefined) {
   return (orders ?? []).reduce((acc, o) => acc + (Number.isFinite(o.total) ? o.total : 0), 0)
 }
 
-function mapRevenueSeries(points: RevenueChartPoint[] | undefined, role: Role): RevenueChartPoint[] {
+function mapRevenueSeries(points: RevenueChartPoint[] | undefined, role: UserRole): RevenueChartPoint[] {
   const base = points ?? []
   if (role === 'vendor') {
     return base.map((p) => ({ ...p, service: 0 }))
@@ -102,18 +102,18 @@ function buildFromAnalytics(
   s: ServiceOrder[] | undefined,
   d: Delivery[] | undefined,
   products: { id: string; name: string; stock: number }[] | undefined,
-  role: Role,
+  role: UserRole,
 ): DashboardOverview {
   const series = a.revenueByDay.map((day) => ({
     label: day.date,
     product: role === 'vendor' ? day.amount : 0,
-    service: role === 'service_provider' ? day.amount : 0,
+    service: role === 'service' ? day.amount : 0,
   }))
   return {
     totalRevenue: role === 'vendor' ? a.productSales : a.serviceEarnings,
     totalOrders: role === 'vendor' ? a.productOrders : a.serviceOrders,
     activeDeliveries: role === 'vendor' ? a.pendingDeliveries : 0,
-    activeServices: role === 'service_provider' ? a.servicesCount : 0,
+    activeServices: role === 'service' ? a.servicesCount : 0,
     revenueWeekly: series.length ? series : DASHBOARD_STATIC_DEMO.revenueWeekly,
     revenueMonthly: DASHBOARD_STATIC_DEMO.revenueMonthly.map((p) =>
       role === 'vendor' ? { ...p, service: 0 } : { ...p, product: 0 },
@@ -142,7 +142,7 @@ function augment(
   d: Delivery[] | undefined,
   products: { id: string; stock: number }[] | undefined,
   services: { id: string }[] | undefined,
-  role: Role,
+  role: UserRole,
 ): DashboardOverview {
   const out = { ...base }
   if (!out.recentOrders?.length) {
@@ -155,7 +155,7 @@ function augment(
     out.activeDeliveriesList = toActiveList(d)
     out.activeDeliveries = out.activeDeliveriesList.length
   }
-  if (role === 'service_provider') {
+  if (role === 'service') {
     out.activeDeliveriesList = []
     out.activeDeliveries = 0
   }
@@ -188,7 +188,7 @@ function augment(
   return out
 }
 
-export function useDashboardViewModel(role: Role | null) {
+export function useDashboardViewModel(role: UserRole | null) {
   const overviewQ = useGetDashboardOverviewQuery()
   const analyticsQ = useGetAnalyticsQuery()
   const pOrdersQ = useGetProductOrdersQuery()
@@ -199,7 +199,7 @@ export function useDashboardViewModel(role: Role | null) {
   const useDemo = demoEnabled()
 
   return useMemo(() => {
-    const resolvedRole: Role | null = role
+    const resolvedRole: UserRole | null = role
     const refetch = async () => {
       await Promise.all([
         overviewQ.refetch(),

@@ -259,7 +259,7 @@ const store = {
       id: 'admin-1',
       name: 'Admin',
       email: 'admin@wak.app',
-      role: 'admin' as const,
+      role: 'vendor' as const,
       status: 'active' as const,
       createdAt: iso(new Date(2025, 1, 1)),
     },
@@ -359,18 +359,7 @@ function makeRangePoints(range: '7d' | '30d' | '90d') {
 
 function makeLoginResponse(email: string, _password: string) {
   const e = (email || '').toLowerCase()
-  const demoRole: UserRole =
-    e === 'asabbir724@gmail.com'
-      ? 'vendor'
-      : e === 'rpsabbir.ahmed@gmail.com'
-        ? 'service_provider'
-        : (email?.includes('admin')
-            ? 'admin'
-            : email?.includes('driver')
-              ? 'driver'
-              : email?.includes('service')
-                ? 'service_provider'
-                : 'vendor') as UserRole
+  const demoRole: UserRole = e === 'asabbir724@gmail.com' ? 'vendor' : email?.includes('service') ? 'service' : 'vendor'
 
   return {
     accessToken: 'static-demo-token',
@@ -918,11 +907,11 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
       return { data: { ...analyticsSummary, productsCount: store.products.length, servicesCount: store.services.length } }
     }
     if (p.method === 'GET' && path === '/vendor/analytics/dashboard-stats') {
-      const role = (p.params as any)?.role === 'service_provider' ? 'service_provider' : 'vendor'
+      const role = (p.params as any)?.role === 'service' ? 'service' : 'vendor'
 
       const productOrders = store.productOrders.length
       const serviceOrders = store.serviceOrders.length
-      const totalOrdersJobs = role === 'service_provider' ? serviceOrders : productOrders
+      const totalOrdersJobs = role === 'service' ? serviceOrders : productOrders
 
       const totalRevenue = [...store.productOrders, ...store.serviceOrders].reduce(
         (a, o) => a + Number((o as any).total ?? 0),
@@ -939,7 +928,7 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
       const prevRevenue = totalRevenue * 0.88
       const prevOrders = totalOrdersJobs * 0.92
       const prevConv = 2.1
-      const conv = role === 'service_provider' ? 3.2 : 2.6
+      const conv = role === 'service' ? 3.2 : 2.6
 
       const stats: any = {
         totalRevenue: { value: totalRevenue, trend: safeTrend(totalRevenue, prevRevenue) },
@@ -970,8 +959,8 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
           ? (JSON.parse(p.body) as any)
           : (p.body as any)
 
-      if (String(b?.role ?? '') !== 'service_provider') {
-        return { error: { status: 403, data: { message: 'Role must be service_provider' } } }
+      if (String(b?.role ?? '') !== 'service') {
+        return { error: { status: 403, data: { message: 'Role must be service' } } }
       }
 
       const title = String(b?.title ?? '').trim()

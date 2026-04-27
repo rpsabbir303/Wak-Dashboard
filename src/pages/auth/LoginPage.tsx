@@ -12,6 +12,7 @@ import { SubmitButton } from '@/components/auth/SubmitButton'
 import { Button } from '@/components/ui/button'
 import { isValidEmail, PASSWORD_MIN } from '@/lib/auth-validation'
 import { fetchErrorMessage } from '@/lib/fetch-error'
+import type { UserRole } from '@/features/auth/authTypes'
 
 function GoogleIcon(props: { className?: string }) {
   return (
@@ -30,7 +31,7 @@ export function LoginPage() {
   const from = (location.state as { from?: string } | null)?.from
   const dispatch = useAppDispatch()
   const [login, { isLoading }] = useLoginMutation()
-  const [role, setRole] = useState<'vendor' | 'service_provider'>('vendor')
+  const [role, setRole] = useState<UserRole>('vendor')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
@@ -60,7 +61,7 @@ export function LoginPage() {
         void navigate(from && from.startsWith('/vendor') ? from : '/vendor/dashboard', { replace: true })
         return
       }
-      if (res.user.role === 'service_provider') {
+      if (res.user.role === 'service') {
         void navigate('/service/dashboard', { replace: true })
         return
       }
@@ -109,10 +110,10 @@ export function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => setRole('service_provider')}
+              onClick={() => setRole('service')}
               className={[
                 'h-10 rounded-lg text-sm font-semibold transition-colors',
-                role === 'service_provider'
+                role === 'service'
                   ? 'bg-[#895129] text-white'
                   : 'bg-transparent text-zinc-700 hover:bg-white',
               ].join(' ')}

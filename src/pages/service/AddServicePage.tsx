@@ -123,7 +123,7 @@ export function AddServicePage() {
         price: Number(v.price),
         packageDetails: (v.packageDetails ?? []).map((s) => s.trim()).filter(Boolean),
         deliveryTime: v.deliveryTime,
-        role: 'service_provider' as const,
+        role: 'service' as const,
       }).unwrap()
 
       toast.success('Service published')

@@ -25,7 +25,7 @@ export type CreateServiceProviderBody = {
   price: number
   packageDetails: string[]
   deliveryTime: string
-  role: Extract<UserRole, 'service_provider'>
+  role: Extract<UserRole, 'service'>
 }
 
 export const serviceApi = baseApi.injectEndpoints({

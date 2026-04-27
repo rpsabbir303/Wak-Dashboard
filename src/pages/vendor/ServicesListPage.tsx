@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { Plus } from 'lucide-react'
 import { useGetServicesQuery } from '@/features/api/serviceApi'
@@ -10,12 +9,13 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import type { RootState } from '@/app/store'
 import { useGetProfileQuery } from '@/features/api/userApi'
+import type { UserRole } from '@/features/auth/authTypes'
 
 export function ServicesListPage() {
   const { data, isLoading, isError } = useGetServicesQuery()
-  const authRole = useSelector((s: RootState) => s.auth.user?.role)
+  const authRole: UserRole | undefined = useSelector((s: RootState) => s.auth.user?.role)
   const { data: profile } = useGetProfileQuery()
-  const role = useMemo(() => (authRole === 'service' ? 'service' : authRole === 'vendor' ? 'vendor' : (profile?.role === 'service' ? 'service' : profile?.role === 'vendor' ? 'vendor' : null)), [authRole, profile?.role])
+  const role: UserRole | null = authRole ?? profile?.role ?? null
 
   return (
     <div className="space-y-4">

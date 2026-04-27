@@ -25,14 +25,7 @@ function mapUser(raw: unknown): AuthUser | null {
   const name = pickString(o, ['name', 'fullName', 'firstName']) ?? undefined
   const phone = pickString(o, ['phone', 'phoneNumber']) ?? undefined
   const r = pickString(o, ['role', 'userRole']) ?? 'vendor'
-  const role: UserRole =
-    r === 'admin'
-      ? 'admin'
-      : r === 'driver'
-        ? 'driver'
-        : r === 'service' || r === 'service_provider'
-          ? 'service_provider'
-          : 'vendor'
+  const role: UserRole = r === 'service' || r === 'service_provider' ? 'service' : 'vendor'
   if (!email && !id) {
     return null
   }
@@ -52,14 +45,7 @@ export function normalizeAuthResponse(body: unknown): AuthResponse {
   const emailOnly = pickString(nested, ['email']) ?? pickString(o, ['email'])
   if (!user && emailOnly) {
     const r = pickString(nested, ['role']) ?? 'vendor'
-    const role: UserRole =
-      r === 'admin'
-        ? 'admin'
-        : r === 'driver'
-          ? 'driver'
-          : r === 'service' || r === 'service_provider'
-            ? 'service_provider'
-            : 'vendor'
+    const role: UserRole = r === 'service' || r === 'service_provider' ? 'service' : 'vendor'
     user = { id: emailOnly, email: emailOnly, role }
   }
   if (!user) {

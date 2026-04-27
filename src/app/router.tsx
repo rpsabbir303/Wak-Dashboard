@@ -2,7 +2,6 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { GuestOnly, RequireAuth } from '@/app/auth-guards'
 import { AuthLayout } from '@/components/auth/AuthLayout'
 import { VendorLayout } from '@/components/layout/dashboard-layout'
-import { AdminLayout } from '@/components/layout/admin-layout'
 import { ServiceLayout } from '@/components/layout/ServiceLayout'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
@@ -29,9 +28,6 @@ import { ServicesListPage } from '@/pages/vendor/ServicesListPage'
 import { SettingsPage } from '@/pages/vendor/SettingsPage'
 import { ControllerManagement } from '@/pages/vendor/ControllerManagement'
 import { RequireRole } from '@/app/role-guard'
-import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage'
-import { AdminPlaceholderPage } from '@/pages/admin/AdminPlaceholderPage'
-import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
 import { ServiceOnboardingPage } from '@/pages/onboarding/service/ServiceOnboardingPage'
 import { VendorOnboardingPage } from '@/pages/onboarding/vendor/VendorOnboardingPage'
 import { EarningsPage } from '@/pages/vendor/EarningsPage'
@@ -71,6 +67,7 @@ export const appRouter = createBrowserRouter([
     path: '/',
     element: <RequireAuth />,
     children: [
+      { index: true, element: <Navigate to="/service/dashboard" replace /> },
       { path: 'onboarding/service', element: <ServiceOnboardingPage /> },
       { path: 'onboarding/vendor', element: <VendorOnboardingPage /> },
       {
@@ -119,7 +116,7 @@ export const appRouter = createBrowserRouter([
         element: <ServiceLayout />,
         children: [
           {
-            element: <RequireRole role="service_provider" />,
+            element: <RequireRole role="service" />,
             children: [
               {
                 path: 'service',
@@ -147,26 +144,7 @@ export const appRouter = createBrowserRouter([
           },
         ],
       },
-      {
-        element: <RequireRole role="admin" />,
-        children: [
-          {
-            path: 'admin',
-            element: <AdminLayout />,
-            children: [
-              { index: true, element: <AdminDashboardPage /> },
-              { path: 'dashboard', element: <AdminDashboardPage /> },
-              { path: 'users', element: <AdminUsersPage /> },
-              { path: 'orders', element: <AdminPlaceholderPage title="Admin · Orders" /> },
-              { path: 'services', element: <AdminPlaceholderPage title="Admin · Services" /> },
-              { path: 'products', element: <AdminPlaceholderPage title="Admin · Products" /> },
-              { path: 'deliveries', element: <AdminPlaceholderPage title="Admin · Deliveries" /> },
-              { path: 'analytics', element: <AdminPlaceholderPage title="Admin · Analytics" /> },
-              { path: 'settings', element: <AdminPlaceholderPage title="Admin · Settings" /> },
-            ],
-          },
-        ],
-      },
     ],
   },
+  { path: '*', element: <div>Page Not Found</div> },
 ])

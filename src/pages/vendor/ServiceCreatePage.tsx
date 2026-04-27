@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { toast } from 'sonner'
@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import type { RootState } from '@/app/store'
 import { useGetProfileQuery } from '@/features/api/userApi'
 import { ServiceFormPage } from '@/pages/vendor/ServiceFormPage'
+import type { UserRole } from '@/features/auth/authTypes'
 
 type PkgState = {
   name: 'basic' | 'standard' | 'premium'
@@ -27,9 +28,9 @@ const emptyPkg = (name: PkgState['name']): PkgState => ({
 })
 
 export function ServiceCreatePage() {
-  const authRole = useSelector((s: RootState) => s.auth.user?.role)
+  const authRole: UserRole | undefined = useSelector((s: RootState) => s.auth.user?.role)
   const { data: profile } = useGetProfileQuery()
-  const role = useMemo(() => (authRole === 'service' ? 'service' : authRole === 'vendor' ? 'vendor' : (profile?.role === 'service' ? 'service' : profile?.role === 'vendor' ? 'vendor' : null)), [authRole, profile?.role])
+  const role: UserRole | null = authRole ?? profile?.role ?? null
   if (role === 'service') {
     return <ServiceFormPage mode="create" />
   }

@@ -61,7 +61,7 @@ export function RegisterPage() {
         password,
         role,
       }).unwrap()
-      if (role === 'service_provider') {
+      if (role === 'service') {
         toast.success('Account created. Let’s set up your service profile.')
         void navigate('/onboarding/service', { replace: true, state: { email: email.trim().toLowerCase(), phone, name } })
       } else {
