@@ -1,4 +1,4 @@
-import type { ServiceControllerPermission, ServiceControllerRecord } from '@/components/controllers/ServiceControllerModal'
+import type { ServiceControllerPermission, ServiceControllerRecord } from '@/features/controllers'
 
 export const SERVICE_CONTROLLERS_LS_KEY = 'service_controller_management:list:v1'
 export const SERVICE_CONTROLLER_SESSION_LS_KEY = 'service_controller_session:permissions:v1'

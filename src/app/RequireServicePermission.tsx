@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { getActiveServiceControllerPermissions } from '@/app/service-permission'
-import type { ServiceControllerPermission } from '@/components/controllers/ServiceControllerModal'
+import type { ServiceControllerPermission } from '@/features/controllers'
 
 const defaultHome = '/service/dashboard'
 

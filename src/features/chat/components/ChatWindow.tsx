@@ -1,5 +1,5 @@
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { cn } from '@/lib/utils'
+import { ScrollArea } from '@/shared/ui/scroll-area'
+import { cn } from '@/shared/utils/utils'
 
 export type DummyMessage = {
   id: string

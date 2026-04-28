@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
-import type { AuthUser } from './authTypes'
+import type { AuthUser } from './types/authTypes'
 
 const TOKEN_KEY = 'auth_token'
 const USER_KEY = 'auth_user'
