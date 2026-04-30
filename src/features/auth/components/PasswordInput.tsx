@@ -1,9 +1,11 @@
 import { useId, useState, type InputHTMLAttributes, type ReactNode } from 'react'
+import { motion } from 'framer-motion'
 import { Eye, EyeOff } from 'lucide-react'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Button } from '@/shared/ui/button'
 import { cn } from '@/shared/utils/utils'
+import { authInputFocusClass, authInputShakeTransition } from '@/features/auth/motion/auth-motion-variants'
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & {
   label?: string
@@ -18,7 +20,11 @@ export function PasswordInput({ label, id: idProp, className, error, labelRight,
   const [show, setShow] = useState(false)
 
   return (
-    <div className="flex w-full flex-col gap-1.5">
+    <motion.div
+      className="flex w-full flex-col gap-1.5"
+      animate={error ? { x: [0, -5, 5, -5, 5, 0] } : { x: 0 }}
+      transition={authInputShakeTransition}
+    >
       {labelRight ? (
         <div className="flex items-center justify-between gap-2">
           {label ? (
@@ -43,8 +49,7 @@ export function PasswordInput({ label, id: idProp, className, error, labelRight,
             // Premium input
             'h-12 rounded-xl border border-gray-200 bg-white/80 pr-10 text-zinc-900 shadow-sm',
             'placeholder:text-zinc-400',
-            'transition-all duration-200',
-            'focus-visible:ring-2 focus-visible:ring-[#895129] focus-visible:ring-offset-0',
+            authInputFocusClass,
             error && 'border-destructive',
             className,
           )}
@@ -68,6 +73,6 @@ export function PasswordInput({ label, id: idProp, className, error, labelRight,
           {error}
         </p>
       ) : null}
-    </div>
+    </motion.div>
   )
 }

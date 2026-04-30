@@ -28,7 +28,9 @@ export function RoleSelector({ value, onChange, disabled }: Props) {
                 'rounded-lg px-3 py-2 text-sm font-semibold',
                 'transition-all duration-200',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#895129]',
-                selected ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-600 hover:bg-white/60 hover:text-zinc-900',
+                selected
+                  ? 'border border-[#895129] bg-[#895129] text-white shadow-sm scale-[1.03]'
+                  : 'border border-gray-200 bg-white text-zinc-900 hover:bg-gray-50',
                 disabled && 'pointer-events-none opacity-50',
               )}
               role="radio"

@@ -1,5 +1,7 @@
 import { useRef, type ClipboardEvent, type KeyboardEvent } from 'react'
+import { motion } from 'framer-motion'
 import { cn } from '@/shared/utils/utils'
+import { authInputFocusClass, authOtpCellFocusProps } from '@/features/auth/motion/auth-motion-variants'
 
 const N = 6
 
@@ -20,7 +22,6 @@ export function OtpInput({ value, onChange, className, idPrefix = 'otp', disable
   const d = digitsOnly(value).slice(0, N)
   const cells = Array.from({ length: N }, (_, i) => d[i] ?? '')
 
-  // Autofocus first empty cell for smooth OTP entry.
   const firstEmptyIndex = Math.min(Math.max(cells.findIndex((c) => !c), 0), N - 1)
 
   function setAt(i: number, ch: string) {
@@ -64,7 +65,7 @@ export function OtpInput({ value, onChange, className, idPrefix = 'otp', disable
       aria-label="6-digit one-time passcode"
     >
       {cells.map((c, i) => (
-        <input
+        <motion.input
           key={i}
           id={`${idPrefix}-${i}`}
           ref={(el) => {
@@ -80,11 +81,10 @@ export function OtpInput({ value, onChange, className, idPrefix = 'otp', disable
           onKeyDown={(e) => onKeyDown(i, e)}
           onFocus={(e) => e.currentTarget.select()}
           onChange={(e) => onCellChange(i, e.target.value)}
+          {...authOtpCellFocusProps}
           className={cn(
-            // Premium OTP boxes
             'h-14 w-12 rounded-xl border border-gray-200 bg-white/80 text-center text-xl text-zinc-900 shadow-sm',
-            'transition-all duration-200',
-            'focus-visible:ring-2 focus-visible:ring-[#895129] focus-visible:outline-none',
+            authInputFocusClass,
             disabled && 'opacity-50',
           )}
         />

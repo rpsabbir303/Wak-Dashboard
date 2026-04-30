@@ -1,7 +1,9 @@
 import * as React from 'react'
+import { motion } from 'framer-motion'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { cn } from '@/shared/utils/utils'
+import { authInputFocusClass, authInputShakeTransition } from '@/features/auth/motion/auth-motion-variants'
 
 type Props = React.ComponentProps<'input'> & {
   label: string
@@ -15,7 +17,11 @@ export const InputField = React.forwardRef<HTMLInputElement, Props>(function Inp
   ref,
 ) {
   return (
-    <div className={cn('flex w-full flex-col gap-1.5', className)}>
+    <motion.div
+      className={cn('flex w-full flex-col gap-1.5', className)}
+      animate={error ? { x: [0, -5, 5, -5, 5, 0] } : { x: 0 }}
+      transition={authInputShakeTransition}
+    >
       <Label className="text-sm font-medium text-zinc-800" htmlFor={id}>
         {label}
       </Label>
@@ -26,8 +32,7 @@ export const InputField = React.forwardRef<HTMLInputElement, Props>(function Inp
           // Premium input
           'h-12 rounded-xl border border-gray-200 bg-white/80 text-zinc-900 shadow-sm',
           'placeholder:text-zinc-400',
-          'transition-all duration-200',
-          'focus-visible:ring-2 focus-visible:ring-[#895129] focus-visible:ring-offset-0',
+          authInputFocusClass,
           error && 'border-destructive',
         )}
         aria-invalid={!!error}
@@ -44,6 +49,6 @@ export const InputField = React.forwardRef<HTMLInputElement, Props>(function Inp
           {error}
         </p>
       ) : null}
-    </div>
+    </motion.div>
   )
 })

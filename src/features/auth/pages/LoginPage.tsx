@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { authButtonMotionProps } from '@/features/auth/motion/auth-motion-variants'
 import { setCredentials } from '@/features/auth'
 import { useAppDispatch } from '@/app/hooks'
 import { AuthCard } from '../components/AuthCard'
@@ -58,14 +60,12 @@ export function LoginPage() {
       <AuthHeader title="Welcome back" subtitle="Sign in to your dashboard" />
 
       <div className="grid gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          className="h-12 rounded-xl border-gray-200 bg-white/70 transition-all duration-200 hover:scale-[1.02]"
-        >
-          <GoogleIcon className="mr-2 size-4 text-zinc-700" />
-          Continue with Google
-        </Button>
+        <motion.div {...authButtonMotionProps}>
+          <Button type="button" variant="outline" className="h-12 w-full rounded-xl border-gray-200 bg-white/70">
+            <GoogleIcon className="mr-2 size-4 text-zinc-700" />
+            Continue with Google
+          </Button>
+        </motion.div>
       </div>
 
       <div className="my-6 flex items-center">
