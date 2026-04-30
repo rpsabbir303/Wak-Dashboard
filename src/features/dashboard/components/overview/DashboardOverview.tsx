@@ -7,6 +7,8 @@ import { useDashboardViewModel } from '@/features/dashboard/hooks/useDashboardVi
 import { VendorDashboard } from './VendorDashboard'
 import { ServiceDashboard } from './ServiceDashboard'
 import type { UserRole } from '@/features/auth'
+import { motion } from 'framer-motion'
+import { fadeUp, staggerContainer } from '@/shared/ui/motion'
 
 export function DashboardOverview() {
   const authRole: UserRole | undefined = useSelector((s: RootState) => s.auth.user?.role)
@@ -17,56 +19,69 @@ export function DashboardOverview() {
 
   if ((isLoading && !data) || !role) {
     return (
-      <div className="w-full space-y-6">
-        <PageHeading role={role} />
+      <motion.div className="w-full space-y-6" variants={staggerContainer(0.08, 0.02)} initial="hidden" animate="show">
+        <motion.div variants={fadeUp}>
+          <PageHeading role={role} />
+        </motion.div>
         <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="bg-muted/30 border-border/60 h-40 rounded-xl border" />
-          <div className="bg-muted/30 border-border/60 h-40 rounded-xl border" />
+          <div className="h-40 rounded-2xl border border-gray-100 bg-white/60" />
+          <div className="h-40 rounded-2xl border border-gray-100 bg-white/60" />
         </div>
-      </div>
+      </motion.div>
     )
   }
 
   if (isError && !data) {
     return (
-      <div className="w-full space-y-6">
-        <PageHeading role={role} />
-        <Alert variant="destructive">
-          <AlertTitle>Could not load dashboard</AlertTitle>
-          <AlertDescription className="flex flex-wrap items-center gap-2">
-            Data source is static demo right now. Try again.
-            <Button type="button" size="sm" variant="secondary" onClick={() => void refetch()}>
-              Retry
-            </Button>
-          </AlertDescription>
-        </Alert>
-      </div>
+      <motion.div className="w-full space-y-6" variants={staggerContainer(0.08, 0.02)} initial="hidden" animate="show">
+        <motion.div variants={fadeUp}>
+          <PageHeading role={role} />
+        </motion.div>
+        <motion.div variants={fadeUp}>
+          <Alert variant="destructive">
+            <AlertTitle>Could not load dashboard</AlertTitle>
+            <AlertDescription className="flex flex-wrap items-center gap-2">
+              Data source is static demo right now. Try again.
+              <Button type="button" size="sm" variant="secondary" onClick={() => void refetch()}>
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </motion.div>
+      </motion.div>
     )
   }
 
   if (!data) return null
 
   return (
-    <div className="w-full space-y-6">
-      <PageHeading role={role} />
+    <motion.div className="w-full space-y-6" variants={staggerContainer(0.08, 0.02)} initial="hidden" animate="show">
+      <motion.div variants={fadeUp}>
+        <PageHeading role={role} />
+      </motion.div>
+
       {isDemo && (
-        <Alert>
-          <AlertTitle>Demo data</AlertTitle>
-          <AlertDescription>Showing static sample data.</AlertDescription>
-        </Alert>
+        <motion.div variants={fadeUp}>
+          <Alert>
+            <AlertTitle>Demo data</AlertTitle>
+            <AlertDescription>Showing static sample data.</AlertDescription>
+          </Alert>
+        </motion.div>
       )}
 
-      {role === 'vendor' && <VendorDashboard data={data} />}
-      {role === 'service' && <ServiceDashboard data={data} meta={meta} />}
-    </div>
+      <motion.div variants={fadeUp}>
+        {role === 'vendor' && <VendorDashboard data={data} />}
+        {role === 'service' && <ServiceDashboard data={data} meta={meta} />}
+      </motion.div>
+    </motion.div>
   )
 }
 
 function PageHeading({ role }: { role: UserRole | null }) {
   return (
     <div className="space-y-1">
-      <h1 className="text-2xl font-semibold tracking-tight">Dashboard overview</h1>
-      <p className="text-muted-foreground text-sm">
+      <h1 className="text-xl font-semibold tracking-tight text-gray-900 md:text-2xl">Dashboard overview</h1>
+      <p className="text-sm text-gray-500">
         {role === 'service'
           ? 'Service performance: jobs and earnings in one place.'
           : 'Business performance: products and deliveries in one place.'}

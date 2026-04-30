@@ -10,11 +10,11 @@ const statusStyles: Record<string, { label: string; className: string }> = {
   delivered: { label: 'Delivered', className: 'border-transparent bg-emerald-600 text-white' },
   processing: { label: 'Processing', className: 'border-transparent bg-blue-600 text-white' },
   accepted: { label: 'Accepted', className: 'border-transparent bg-teal-600 text-white' },
-  in_progress: { label: 'In Progress', className: 'border-transparent bg-indigo-600 text-white' },
+  in_progress: { label: 'In Progress', className: 'border-transparent bg-[#895129] text-white' },
   completed: { label: 'Completed', className: 'border-transparent bg-emerald-600 text-white' },
   requested: { label: 'Requested', className: 'border-transparent bg-orange-500 text-white' },
   picked_up: { label: 'Picked Up', className: 'border-transparent bg-amber-700 text-white' },
-  in_transit: { label: 'In Transit', className: 'border-transparent bg-indigo-600 text-white' },
+  in_transit: { label: 'In Transit', className: 'border-transparent bg-[#895129] text-white' },
 }
 
 type StatusBadgeProps = {

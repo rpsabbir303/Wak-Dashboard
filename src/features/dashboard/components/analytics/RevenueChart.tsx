@@ -25,20 +25,28 @@ export function RevenueChart({
   const [hovered, setHovered] = useState<AnalyticsRevenuePoint | null>(null)
 
   return (
-    <Card className={cn('rounded-xl border-border/60 shadow-sm', className)}>
+    <Card
+      className={cn(
+        'group relative overflow-hidden rounded-xl border-border/60 bg-gradient-to-br from-card to-muted/20 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md',
+        className,
+      )}
+    >
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="absolute -bottom-24 -left-24 size-72 rounded-full bg-primary/10 blur-3xl" />
+      </div>
       <CardHeader className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <div className="space-y-1">
           <CardTitle>Revenue & growth</CardTitle>
           <CardDescription>Revenue and orders/jobs over time.</CardDescription>
         </div>
-        <div className="bg-muted inline-flex rounded-lg p-1">
+        <div className="inline-flex rounded-xl bg-muted/60 p-1 ring-1 ring-border/60 backdrop-blur supports-[backdrop-filter]:bg-muted/50">
           {(['7d', '30d', '90d'] as const).map((r) => (
             <Button
               key={r}
               type="button"
               variant={range === r ? 'default' : 'ghost'}
               size="sm"
-              className="h-8 px-3"
+              className="h-8 px-3 rounded-lg"
               onClick={() => onChangeRange(r)}
             >
               {r === '7d' ? '7 Days' : r === '30d' ? '30 Days' : '90 Days'}
@@ -50,7 +58,7 @@ export function RevenueChart({
         {isLoading ? (
           <Skeleton className="h-72 w-full rounded-lg" />
         ) : has ? (
-          <div className="h-72 w-full min-h-[280px]">
+          <div className="h-72 w-full min-h-[280px] rounded-xl border border-border/60 bg-background/40 p-2 backdrop-blur supports-[backdrop-filter]:bg-background/30">
             <ResponsiveContainer>
               <LineChart
                 data={data}
@@ -68,8 +76,8 @@ export function RevenueChart({
                 <Tooltip
                   contentStyle={{
                     borderRadius: 8,
-                    border: '1px solid hsl(214.3 31.8% 91.4%)',
-                    background: 'hsl(0 0% 100%)',
+                    border: '1px solid hsl(var(--border))',
+                    background: 'hsl(var(--background))',
                   }}
                   formatter={(v: any, name: any) => {
                     const n = String(name ?? '')
@@ -83,8 +91,26 @@ export function RevenueChart({
                   }}
                 />
                 <Legend />
-                <Line yAxisId="left" type="monotone" name="Revenue" dataKey="revenue" stroke="#895129" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                <Line yAxisId="right" type="monotone" name="Orders/Jobs" dataKey="ordersJobs" stroke="#0d9488" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  name="Revenue"
+                  dataKey="revenue"
+                  stroke="#895129"
+                  strokeWidth={2.25}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  name="Orders/Jobs"
+                  dataKey="ordersJobs"
+                  stroke="#0d9488"
+                  strokeWidth={2.25}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>

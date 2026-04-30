@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { BarChart3, CalendarDays, HandCoins, Home, LogOut, Menu, MessageCircle, Settings, Shield, Users, Wrench } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { LayoutGroup, motion } from 'framer-motion'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
 import { LogoutModal } from '@/shared/components/LogoutModal'
@@ -58,16 +59,17 @@ function ServiceSidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <nav className="flex flex-col gap-1 px-2">
-          {items.map((item) => {
+        <LayoutGroup>
+          <nav className="flex flex-col gap-1 px-2 py-2">
+            {items.map((item) => {
             if (item.to.startsWith('/service/settings')) {
               return (
                 <div key={item.to} className="space-y-1">
                   <button
                     type="button"
                     className={cn(
-                      'flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium transition',
-                      settingsActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                      'flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+                      settingsActive ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:bg-white/70 hover:text-gray-900',
                     )}
                     onClick={() => setOpenSettings((v) => !v)}
                   >
@@ -96,15 +98,28 @@ function ServiceSidebar({ onNavigate }: { onNavigate?: () => void }) {
                           to={c.to}
                           className={({ isActive }) =>
                             cn(
-                              'flex items-center gap-2 rounded-md py-1.5 text-xs font-medium transition',
+                              'relative flex items-center gap-2 rounded-xl py-1.5 text-xs font-medium transition-colors',
                               'pl-8 pr-3',
-                              isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                              isActive ? 'text-primary' : 'text-gray-600 hover:bg-white/70 hover:text-gray-900',
                             )
                           }
                           onClick={() => onNavigate?.()}
                         >
-                          <span className="size-2 rounded-full bg-current opacity-60" />
-                          {c.label}
+                          {({ isActive }) => (
+                            <>
+                              {isActive ? (
+                                <motion.span
+                                  layoutId="service-active-subpill"
+                                  className="absolute inset-0 rounded-xl bg-primary/10 ring-1 ring-primary/20"
+                                  transition={{ type: 'spring', stiffness: 520, damping: 42 }}
+                                />
+                              ) : null}
+                              <span className="relative flex items-center gap-2">
+                                <span className="size-2 rounded-full bg-current opacity-60" />
+                                {c.label}
+                              </span>
+                            </>
+                          )}
                         </NavLink>
                       ))}
                     </div>
@@ -119,18 +134,32 @@ function ServiceSidebar({ onNavigate }: { onNavigate?: () => void }) {
                 to={item.to}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition',
-                    isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                    'relative flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+                    isActive ? 'text-primary' : 'text-gray-600 hover:bg-white/70 hover:text-gray-900',
                   )
                 }
                 onClick={() => onNavigate?.()}
               >
-                <item.icon className="size-4" />
-                {item.label}
+                {({ isActive }) => (
+                  <>
+                    {isActive ? (
+                      <motion.span
+                        layoutId="service-active-pill"
+                        className="absolute inset-0 rounded-xl bg-primary/10 ring-1 ring-primary/20"
+                        transition={{ type: 'spring', stiffness: 520, damping: 42 }}
+                      />
+                    ) : null}
+                    <span className="relative flex items-center gap-2">
+                      <item.icon className="size-4" />
+                      {item.label}
+                    </span>
+                  </>
+                )}
               </NavLink>
             )
           })}
-        </nav>
+          </nav>
+        </LayoutGroup>
       </div>
     </div>
   )
@@ -161,7 +190,7 @@ export function ServiceLayout() {
   }
 
   return (
-    <div className="bg-background min-h-svh w-full text-foreground">
+    <div className="min-h-svh w-full bg-gradient-to-br from-gray-50 to-gray-100 text-foreground">
       <div className="flex w-full min-h-svh">
         {mobileOpen ? (
           <button
@@ -174,7 +203,7 @@ export function ServiceLayout() {
 
         <aside
           className={cn(
-            'bg-card z-40 flex w-64 shrink-0 flex-col border-r transition max-md:fixed max-md:top-0 max-md:bottom-0 max-md:left-0',
+            'z-40 flex w-64 shrink-0 flex-col border-r border-gray-100 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/70 transition max-md:fixed max-md:top-0 max-md:bottom-0 max-md:left-0',
             'md:sticky md:top-0 md:h-svh',
             !mobileOpen && 'max-md:-translate-x-full max-md:shadow-none',
             mobileOpen && 'max-md:translate-x-0',
@@ -186,7 +215,7 @@ export function ServiceLayout() {
               className="flex items-center gap-2 font-semibold text-primary"
               onClick={() => setMobileOpen(false)}
             >
-              <span className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md text-sm">
+              <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-primary-foreground shadow-sm">
                 W
               </span>
               <span>Unified service</span>
@@ -200,9 +229,9 @@ export function ServiceLayout() {
             <button
               type="button"
               className={cn(
-                'flex w-full items-center gap-2 rounded-md py-2 text-sm font-medium transition',
+                'flex w-full items-center gap-2 rounded-xl py-2 text-sm font-medium transition-colors',
                 'px-3',
-                'text-red-500 hover:bg-red-100 cursor-pointer',
+                'text-rose-600 hover:bg-rose-50 cursor-pointer',
               )}
               onClick={() => {
                 setShowLogoutModal(true)
@@ -216,7 +245,7 @@ export function ServiceLayout() {
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="bg-background/95 border-b">
+          <header className="sticky top-0 z-20 border-b border-gray-100 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60">
             <div className="flex h-14 items-center gap-2 px-4">
               <Button
                 className="md:hidden"
@@ -231,7 +260,7 @@ export function ServiceLayout() {
               <h1 className="text-foreground min-w-0 flex-1 truncate text-base font-semibold md:text-lg">Dashboard</h1>
             </div>
           </header>
-          <main className="min-h-[calc(100svh-3.5rem)] w-full flex-1 px-6 lg:px-8 py-6">
+          <main className="min-h-[calc(100svh-3.5rem)] w-full flex-1 px-6 py-6 lg:px-8">
             <Outlet />
           </main>
         </div>

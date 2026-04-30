@@ -20,7 +20,7 @@ function tagLabel(t: CustomerTag) {
 
 function tagClass(t: CustomerTag) {
   if (t === 'vip') return 'bg-[#895129] text-white border-[#895129]'
-  if (t === 'premium') return 'bg-indigo-600 text-white border-indigo-600'
+  if (t === 'premium') return 'bg-[#895129] text-white border-[#895129]'
   return 'bg-emerald-600 text-white border-emerald-600'
 }
 
