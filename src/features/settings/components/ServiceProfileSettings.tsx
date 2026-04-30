@@ -9,6 +9,12 @@ import { Button } from '@/shared/ui/button'
 import { Badge } from '@/shared/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { cn } from '@/shared/utils/utils'
+import {
+  SERVICE_PROVIDER_PROFILE_LS_KEY,
+  emptyServiceCountrySelection,
+  normalizeServiceCountrySelection,
+} from '@/shared/utils/service-provider-profile-storage'
+import { CountryMultiSelect, type ServiceCountrySelection } from '@/shared/components/CountryMultiSelect'
 import { DynamicListInput } from '@/features/services/components/DynamicListInput'
 import {
   DropdownMenu,
@@ -28,6 +34,8 @@ export type ServiceProviderProfileData = {
   address: string
   category: string[] // multi-select (service categories)
   serviceArea: string
+  /** Global availability; defaults new services in Add Service. */
+  serviceLocation: ServiceCountrySelection
 
   experienceLevel: ExperienceLevel
   years: string
@@ -45,7 +53,6 @@ export type ServiceProviderProfileData = {
   images: string[] // preview urls
 }
 
-const LS_KEY = 'service_settings:profile:v2'
 const ONBOARDING_KEY = 'service_onboarding_v1'
 
 const categoryOptions = [
@@ -71,7 +78,7 @@ function normalizeTag(s: string) {
 
 function safeLoad(): ServiceProviderProfileData | null {
   try {
-    const raw = localStorage.getItem(LS_KEY)
+    const raw = localStorage.getItem(SERVICE_PROVIDER_PROFILE_LS_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as unknown
     if (!parsed || typeof parsed !== 'object') return null
@@ -95,7 +102,7 @@ function safeLoadOnboarding(): Partial<Record<string, any>> | null {
 
 function safeSave(v: ServiceProviderProfileData) {
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify(v))
+    localStorage.setItem(SERVICE_PROVIDER_PROFILE_LS_KEY, JSON.stringify(v))
   } catch {
     // ignore
   }
@@ -173,7 +180,12 @@ export function ServiceProfileSettings({
 
   const initial = useMemo(() => {
     const stored = safeLoad()
-    if (stored) return stored
+    if (stored) {
+      return {
+        ...stored,
+        serviceLocation: normalizeServiceCountrySelection(stored.serviceLocation),
+      }
+    }
     const onboarding = safeLoadOnboarding()
     const fullName = `${profile?.firstName ?? ''} ${profile?.lastName ?? ''}`.trim()
     return {
@@ -184,6 +196,7 @@ export function ServiceProfileSettings({
       address: String(onboarding?.address ?? ''),
       category: Array.isArray(onboarding?.serviceCategories) ? (onboarding?.serviceCategories as string[]) : [],
       serviceArea: String(onboarding?.serviceArea ?? ''),
+      serviceLocation: emptyServiceCountrySelection(),
 
       experienceLevel: (onboarding?.experienceLevel as ExperienceLevel) ?? '',
       years: String(onboarding?.yearsExperience ?? ''),
@@ -338,6 +351,20 @@ export function ServiceProfileSettings({
               <Input id="serviceArea" value={v.serviceArea} onChange={(e) => setV((p) => ({ ...p, serviceArea: e.target.value }))} />
               {errors.serviceArea ? <p className="text-sm text-red-500">{errors.serviceArea}</p> : null}
             </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="service-location">Service Location</Label>
+            <CountryMultiSelect
+              id="service-location"
+              value={v.serviceLocation}
+              onChange={(serviceLocation) => setV((p) => ({ ...p, serviceLocation }))}
+            />
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              Optional but recommended. Saved for your account and used as the default country list when you{' '}
+              <span className="font-medium text-[#895129]">add a new service</span> (you can change it per listing).
+              Choose <span className="font-medium">All countries</span> for global availability.
+            </p>
           </div>
         </CardContent>
       </Card>

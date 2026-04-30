@@ -980,9 +980,14 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
       const services = Array.isArray(b?.services) ? b.services.map((x: any) => String(x).trim()).filter(Boolean) : []
       const tech = Array.isArray(b?.technologies) ? b.technologies.map((x: any) => String(x).trim()).filter(Boolean) : []
       const packageDetails = Array.isArray(b?.packageDetails) ? b.packageDetails.map((x: any) => String(x).trim()).filter(Boolean) : []
+      const allCountries = Boolean(b?.allCountries)
+      const countries = Array.isArray(b?.countries) ? b.countries.map((x: any) => String(x).trim().toUpperCase()).filter(Boolean) : []
 
       if (!title || !description || !category || !Number.isFinite(price) || price <= 0) {
         return { error: { status: 400, data: { message: 'Invalid service payload' } } }
+      }
+      if (!allCountries && countries.length === 0) {
+        return { error: { status: 400, data: { message: 'Select at least one country or all countries' } } }
       }
 
       const s: Service = {
@@ -1001,6 +1006,8 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
         benefits: packageDetails,
         providerName: 'Demo Provider',
         rating: 4.6,
+        allCountries,
+        serviceCountries: allCountries ? [] : countries,
       }
       store.services.push(s)
       return { data: s }

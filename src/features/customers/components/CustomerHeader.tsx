@@ -1,9 +1,10 @@
+import { motion } from 'framer-motion'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
-import { Card } from '@/shared/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar'
 import type { CustomerDetails, CustomerTag } from '@/shared/types/api'
 import { ArrowLeft } from 'lucide-react'
+import { buttonMotionProps, cardHoverTransition } from '@/features/customers/motion/customer-details-variants'
 
 function initials(name: string) {
   const parts = name.split(' ').filter(Boolean)
@@ -32,7 +33,10 @@ export function CustomerHeader({
   onBack: () => void
 }) {
   return (
-    <Card className="rounded-xl border-border/60 bg-card/50 shadow-sm">
+    <motion.div
+      whileHover={{ y: -4, transition: cardHoverTransition }}
+      className="rounded-xl border border-border/60 bg-card/50 text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md"
+    >
       <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-4">
           <Avatar className="size-12 ring-1 ring-border">
@@ -63,13 +67,15 @@ export function CustomerHeader({
         </div>
 
         <div className="flex items-center justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onBack}>
-            <ArrowLeft className="mr-2 size-4" />
-            Back
-          </Button>
+          <motion.div {...buttonMotionProps} className="inline-flex">
+            <Button type="button" variant="outline" onClick={onBack}>
+              <ArrowLeft className="mr-2 size-4" />
+              Back
+            </Button>
+          </motion.div>
         </div>
       </div>
-    </Card>
+    </motion.div>
   )
 }
 

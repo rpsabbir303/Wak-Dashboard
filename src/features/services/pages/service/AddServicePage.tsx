@@ -11,20 +11,20 @@ import { Badge } from '@/shared/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { DynamicListInput } from '@/features/services/components/DynamicListInput'
 import { useCreateServiceProviderServiceMutation } from '@/features/services'
+import { CountryMultiSelect, isCountrySelectionValid, type ServiceCountrySelection } from '@/shared/components/CountryMultiSelect'
+import { readServiceLocationFromLocalStorage } from '@/shared/utils/service-provider-profile-storage'
 import { cn } from '@/shared/utils/utils'
 import { fetchErrorMessage } from '@/shared/utils/fetch-error'
-
-type PricingType = 'hourly' | 'fixed'
 
 type FormState = {
   title: string
   category: string
+  countrySelection: ServiceCountrySelection
   description: string
   servicesIncluded: string[]
   technologies: string[]
   imageFile: File | null
   imagePreviewUrl: string
-  pricingType: PricingType
   price: string
   packageDetails: string[]
   deliveryTime: string
@@ -48,21 +48,21 @@ export function AddServicePage() {
   const [createService, { isLoading }] = useCreateServiceProviderServiceMutation()
   const fileRef = useRef<HTMLInputElement | null>(null)
 
-  const [v, setV] = useState<FormState>({
+  const [v, setV] = useState<FormState>(() => ({
     title: '',
     category: '',
+    countrySelection: readServiceLocationFromLocalStorage(),
     description: '',
     servicesIncluded: [],
     technologies: [],
     imageFile: null,
     imagePreviewUrl: '',
-    pricingType: 'fixed',
     price: '',
     packageDetails: [],
     deliveryTime: '3',
-  })
+  }))
 
-  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>> & { countries?: string }>({})
   const [techDraft, setTechDraft] = useState('')
 
   const previewUrl = useMemo(() => {
@@ -74,19 +74,21 @@ export function AddServicePage() {
   const canSubmit = useMemo(() => {
     if (!v.title.trim()) return false
     if (!v.category.trim()) return false
+    if (!isCountrySelectionValid(v.countrySelection)) return false
     if (!v.description.trim()) return false
     if (!v.price.trim() || !Number.isFinite(Number(v.price)) || Number(v.price) <= 0) return false
     if (!v.deliveryTime) return false
     return true
   }, [v])
 
-  function validate(): Partial<Record<keyof FormState, string>> {
-    const e: Partial<Record<keyof FormState, string>> = {}
+  function validate(): Partial<Record<keyof FormState, string>> & { countries?: string } {
+    const e: Partial<Record<keyof FormState, string>> & { countries?: string } = {}
     if (!v.title.trim()) e.title = 'Service title is required.'
     if (!v.category.trim()) e.category = 'Category is required.'
+    if (!isCountrySelectionValid(v.countrySelection)) e.countries = 'Select at least one country or all countries.'
     if (!v.description.trim()) e.description = 'Description is required.'
-    if (!v.price.trim()) e.price = 'Price is required.'
-    else if (!Number.isFinite(Number(v.price)) || Number(v.price) <= 0) e.price = 'Enter a valid price.'
+    if (!v.price.trim()) e.price = 'Base price is required.'
+    else if (!Number.isFinite(Number(v.price)) || Number(v.price) <= 0) e.price = 'Enter a valid base price.'
     if (!v.deliveryTime) e.deliveryTime = 'Delivery time is required.'
     return e
   }
@@ -115,11 +117,14 @@ export function AddServicePage() {
       await createService({
         title: v.title.trim(),
         category: v.category.trim(),
+        allCountries: v.countrySelection.allCountries,
+        countries: v.countrySelection.allCountries ? [] : v.countrySelection.countryCodes,
         description: v.description.trim(),
         services: (v.servicesIncluded ?? []).map((s) => s.trim()).filter(Boolean),
         technologies: (v.technologies ?? []).map((s) => s.trim()).filter(Boolean),
         image: v.imagePreviewUrl || previewUrl || '',
-        pricingType: v.pricingType,
+        // Listing base price only; custom offers handle negotiated final amounts in chat.
+        pricingType: 'fixed',
         price: Number(v.price),
         packageDetails: (v.packageDetails ?? []).map((s) => s.trim()).filter(Boolean),
         deliveryTime: v.deliveryTime,
@@ -137,7 +142,7 @@ export function AddServicePage() {
     <div className="w-full space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Add new service</h1>
-        <p className="text-muted-foreground text-sm">Create a service listing with pricing, delivery time, and details.</p>
+        <p className="text-muted-foreground text-sm">Create a service listing with a base price, delivery time, and details.</p>
       </div>
 
       <div className="grid w-full grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_380px]">
@@ -185,6 +190,19 @@ export function AddServicePage() {
                   </SelectContent>
                 </Select>
                 {errors.category ? <p className="text-sm text-red-500">{errors.category}</p> : null}
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="service-country">Service Country</Label>
+                <CountryMultiSelect
+                  id="service-country"
+                  value={v.countrySelection}
+                  onChange={(countrySelection) => {
+                    setV((s) => ({ ...s, countrySelection }))
+                    setErrors((p) => ({ ...p, countries: undefined }))
+                  }}
+                  error={errors.countries}
+                />
               </div>
 
               <div className="grid gap-2">
@@ -337,34 +355,16 @@ export function AddServicePage() {
           <Card className="rounded-xl border-border/60 shadow-sm">
             <CardHeader>
               <CardTitle>Pricing</CardTitle>
-              <CardDescription>Set pricing and delivery details.</CardDescription>
+              <CardDescription>Base listing price and delivery. Negotiate final amounts with custom offers in chat.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 rounded-xl border border-border/60 bg-muted/20 p-1">
-                <button
-                  type="button"
-                  onClick={() => setV((s) => ({ ...s, pricingType: 'hourly' }))}
-                  className={cn(
-                    'h-10 rounded-lg text-sm font-semibold transition-colors',
-                    v.pricingType === 'hourly' ? 'bg-[#895129] text-white' : 'bg-transparent hover:bg-background',
-                  )}
-                >
-                  Hourly
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setV((s) => ({ ...s, pricingType: 'fixed' }))}
-                  className={cn(
-                    'h-10 rounded-lg text-sm font-semibold transition-colors',
-                    v.pricingType === 'fixed' ? 'bg-[#895129] text-white' : 'bg-transparent hover:bg-background',
-                  )}
-                >
-                  Fixed
-                </button>
-              </div>
-
               <div className="grid gap-2">
-                <Label htmlFor="price">Price</Label>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Starting from</span>
+                  <Label htmlFor="price" className="text-base font-semibold">
+                    Base price
+                  </Label>
+                </div>
                 <Input
                   id="price"
                   type="number"
@@ -379,6 +379,9 @@ export function AddServicePage() {
                   placeholder="0.00"
                   className={errors.price ? 'border-red-500' : undefined}
                 />
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  Final price can be adjusted via custom offers.
+                </p>
                 {errors.price ? <p className="text-sm text-red-500">{errors.price}</p> : null}
               </div>
 

@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { FileText, Paperclip, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { FileText, Paperclip, Phone, Send, X } from 'lucide-react'
+import { toast } from 'sonner'
+import { CallModal } from '@/features/chat/components/CallModal'
+import { ChatOfferMessage, type OfferBubble, type OfferStatus } from '@/features/chat/components/ChatOfferMessage'
+import { SendOfferModal, type OfferFormValues } from '@/features/chat/components/SendOfferModal'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
@@ -15,16 +20,27 @@ type Conversation = {
   unread: number
 }
 
-type ChatMessage = {
+type ChatTextMessage = {
   id: number
   sender: 'customer' | 'provider'
-  text: string
   time: string
+  variant?: 'text'
+  text: string
   status?: 'sent' | 'delivered' | 'seen'
   fileUrl?: string
   fileType?: 'image' | 'file'
   fileName?: string
 }
+
+type ChatOfferMessageRow = {
+  id: number
+  sender: 'customer' | 'provider'
+  time: string
+  variant: 'offer'
+  offer: OfferBubble
+}
+
+type ChatMessage = ChatTextMessage | ChatOfferMessageRow
 
 type PendingAttachment = {
   id: string
@@ -37,6 +53,9 @@ const conversationsSeed: Conversation[] = [
   { id: 1, bookingId: 'BK-2031', customer: 'Mira K.', lastMessage: 'Can you finish today?', time: '2 min ago', unread: 2 },
 ]
 
+/** Service dashboard: signed-in user is always the provider in this demo. */
+const VIEWER_ROLE: 'provider' | 'customer' = 'provider'
+
 const messagesSeed: Record<number, ChatMessage[]> = {
   1: [
     { id: 1, sender: 'customer', text: 'Hi, is this service available?', time: '10:00 AM', status: 'seen' },
@@ -46,12 +65,15 @@ const messagesSeed: Record<number, ChatMessage[]> = {
 }
 
 export function MessagesPage() {
+  const navigate = useNavigate()
   const [conversations, setConversations] = useState<Conversation[]>(conversationsSeed)
   const [activeId, setActiveId] = useState<number | null>(conversationsSeed[0]?.id ?? null)
   const [messagesByConvo, setMessagesByConvo] = useState<Record<number, ChatMessage[]>>(messagesSeed)
   const [draft, setDraft] = useState('')
   const [pendingFiles, setPendingFiles] = useState<PendingAttachment[]>([])
   const [typing, setTyping] = useState(false)
+  const [callOpen, setCallOpen] = useState(false)
+  const [offerOpen, setOfferOpen] = useState(false)
   const attachRef = useRef<HTMLInputElement | null>(null)
 
   const active = useMemo(
@@ -90,6 +112,76 @@ export function MessagesPage() {
     setPendingFiles((prev) => prev.filter((p) => p.id !== id))
   }
 
+  function sendOfferFromModal(values: OfferFormValues) {
+    if (!active) return
+    const now = new Date()
+    const time = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+    const offer: OfferBubble = {
+      offerId: `off-${Date.now()}`,
+      title: values.title,
+      description: values.description,
+      price: values.price,
+      deliveryDays: values.deliveryDays,
+      revisions: values.revisions,
+      status: 'pending',
+    }
+    const row: ChatOfferMessageRow = {
+      id: Date.now(),
+      sender: 'provider',
+      time,
+      variant: 'offer',
+      offer,
+    }
+    setMessagesByConvo((prev) => ({
+      ...prev,
+      [active.id]: [...(prev[active.id] ?? []), row],
+    }))
+    setConversations((prev) =>
+      prev.map((c) => (c.id === active.id ? { ...c, lastMessage: `Offer: ${values.title}`, time: 'just now' } : c)),
+    )
+    toast.success('Offer sent')
+  }
+
+  function setOfferStatus(convoId: number, messageId: number, status: OfferStatus) {
+    setMessagesByConvo((prev) => ({
+      ...prev,
+      [convoId]: (prev[convoId] ?? []).map((m) =>
+        m.variant === 'offer' && m.id === messageId
+          ? { ...m, offer: { ...m.offer, status } }
+          : m,
+      ),
+    }))
+  }
+
+  function withdrawOffer(convoId: number, messageId: number, offer: OfferBubble) {
+    if (offer.status !== 'pending') return
+    setOfferStatus(convoId, messageId, 'withdrawn')
+    toast.message('Offer withdrawn')
+  }
+
+  function acceptOffer(convoId: number, messageId: number, offer: OfferBubble, customerName: string) {
+    if (offer.status !== 'pending') return
+    setOfferStatus(convoId, messageId, 'accepted')
+    navigate('/service/bookings', {
+      replace: false,
+      state: {
+        fromOffer: {
+          offerId: offer.offerId,
+          title: offer.title,
+          customer: customerName,
+          amount: offer.price,
+        },
+      },
+    })
+    toast.success('Offer accepted — new booking added')
+  }
+
+  function rejectOffer(convoId: number, messageId: number, offer: OfferBubble) {
+    if (offer.status !== 'pending') return
+    setOfferStatus(convoId, messageId, 'rejected')
+    toast.message('Offer declined')
+  }
+
   function send() {
     if (!active) return
     const text = draft.trim()
@@ -100,7 +192,7 @@ export function MessagesPage() {
     const time = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
     const baseId = Date.now()
 
-    const attachmentMessages: ChatMessage[] = pendingFiles.map((p, idx) => ({
+    const attachmentMessages: ChatTextMessage[] = pendingFiles.map((p, idx) => ({
       id: baseId + idx,
       sender: 'provider',
       text: idx === 0 ? text : '',
@@ -121,7 +213,7 @@ export function MessagesPage() {
               text,
               time,
               status: 'sent',
-            },
+            } satisfies ChatTextMessage,
           ]
 
     setMessagesByConvo((prev) => ({
@@ -140,7 +232,7 @@ export function MessagesPage() {
     setTyping(true)
     window.setTimeout(() => {
       setTyping(false)
-      const reply: ChatMessage = {
+      const reply: ChatTextMessage = {
         id: Date.now() + 1,
         sender: 'customer',
         text: 'Great, thanks!',
@@ -157,16 +249,26 @@ export function MessagesPage() {
     }, 900)
   }
 
+  const offerDefaultTitle = active ? `Custom service · ${active.bookingId}` : 'Custom service'
+
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-6 bg-[#FFFFFF]">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">Messages</h1>
         <p className="text-muted-foreground text-sm">Chat with customers about bookings and service details.</p>
       </div>
 
+      <CallModal open={callOpen} onOpenChange={setCallOpen} />
+      <SendOfferModal
+        open={offerOpen}
+        onOpenChange={setOfferOpen}
+        defaultTitle={offerDefaultTitle}
+        onSend={sendOfferFromModal}
+      />
+
       <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-[360px_1fr]">
         {/* LEFT: Conversations */}
-        <Card className="rounded-xl border-border/60 shadow-sm min-h-[70svh]">
+        <Card className="min-h-[70svh] rounded-xl border-border/60 bg-[#FFFFFF] shadow-sm">
           <CardHeader>
             <CardTitle>Conversations</CardTitle>
             <CardDescription>Customers and recent messages</CardDescription>
@@ -214,24 +316,64 @@ export function MessagesPage() {
         </Card>
 
         {/* RIGHT: Chat */}
-        <Card className="rounded-xl border-border/60 shadow-sm min-h-[70svh]">
+        <Card className="min-h-[70svh] rounded-xl border-border/60 bg-[#FFFFFF] shadow-sm">
           {active ? (
             <>
-              <CardHeader className="border-b">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <CardTitle className="truncate">{active.customer}</CardTitle>
-                    <CardDescription>Booking: {active.bookingId}</CardDescription>
+              <CardHeader className="border-b border-border/60 bg-[#FFFFFF]">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="truncate leading-tight">{active.customer}</CardTitle>
+                    <CardDescription className="mt-0.5 leading-normal">Booking: {active.bookingId}</CardDescription>
                   </div>
-                  <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
-                    Online
-                  </Badge>
+                  <div className="flex flex-row flex-wrap items-center gap-2.5 sm:gap-3 sm:shrink-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      aria-label="Call"
+                      className="h-10 min-h-10 shrink-0 border-[#895129]/35 px-3.5 text-sm leading-none text-[#895129] hover:bg-[#895129]/10"
+                      onClick={() => setCallOpen(true)}
+                    >
+                      <Phone className="size-4 shrink-0" />
+                      <span className="hidden sm:inline">Call</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      aria-label="Send offer"
+                      className="h-10 min-h-10 shrink-0 bg-[#895129] px-3.5 text-sm leading-none hover:bg-[#7b4723]"
+                      onClick={() => setOfferOpen(true)}
+                    >
+                      <Send className="size-4 shrink-0" />
+                      <span className="hidden sm:inline">Send Offer</span>
+                    </Button>
+                    <Badge
+                      variant="outline"
+                      className="h-10 min-h-10 shrink-0 rounded-full border-emerald-200 bg-emerald-50 px-3 py-0 text-xs font-medium leading-none text-emerald-700"
+                    >
+                      Online
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="flex h-[calc(70svh-7.25rem)] flex-col">
                 <div className="flex-1 overflow-y-auto pr-1">
                   <div className="space-y-3">
                     {msgs.map((m) => {
+                      if (m.variant === 'offer') {
+                        const mine = m.sender === 'provider'
+                        const isSenderView = m.sender === VIEWER_ROLE
+                        return (
+                          <ChatOfferMessage
+                            key={m.id}
+                            mine={mine}
+                            time={m.time}
+                            offer={m.offer}
+                            isSenderView={isSenderView}
+                            onAccept={() => acceptOffer(active.id, m.id, m.offer, active.customer)}
+                            onReject={() => rejectOffer(active.id, m.id, m.offer)}
+                            onWithdraw={() => withdrawOffer(active.id, m.id, m.offer)}
+                          />
+                        )
+                      }
                       const mine = m.sender === 'provider'
                       return (
                         <div key={m.id} className={cn('flex', mine ? 'justify-end' : 'justify-start')}>

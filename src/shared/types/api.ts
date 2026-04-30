@@ -59,6 +59,9 @@ export type Service = {
   benefits?: string[]
   providerName?: string
   rating?: number
+  /** Service availability: all countries, or explicit ISO country codes. */
+  allCountries?: boolean
+  serviceCountries?: string[]
 }
 
 export type ProductOrderStatus =

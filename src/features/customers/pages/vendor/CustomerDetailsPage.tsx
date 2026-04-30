@@ -1,11 +1,21 @@
 import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Badge } from '@/shared/ui/badge'
 import { CustomerHeader } from '@/features/customers/components/CustomerHeader'
 import { CustomerStats } from '@/features/customers/components/CustomerStats'
 import { useGetCustomerDetailsQuery } from '@/features/customers'
+import {
+  cardHoverTransition,
+  pageLoadTransition,
+  staggerCardVariants,
+  staggerParentVariants,
+  staggerTileVariants,
+  staggerTilesParentVariants,
+  timelineItemVariants,
+} from '@/features/customers/motion/customer-details-variants'
 
 function fmtMoney(n: number) {
   return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(n)
@@ -82,40 +92,65 @@ export function CustomerDetailsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      className="space-y-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={pageLoadTransition}
+    >
       <CustomerHeader customer={customer} onBack={() => navigate(-1)} />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="rounded-xl border-border/60 shadow-sm">
-          <CardHeader>
-            <CardTitle>Lifetime value</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CustomerStats ltv={customer.lifetimeValue} />
-          </CardContent>
-        </Card>
+      <motion.div
+        className="grid grid-cols-1 gap-6 lg:grid-cols-2"
+        variants={staggerParentVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div
+          variants={staggerCardVariants}
+          whileHover={{ y: -4, transition: cardHoverTransition }}
+          className="min-h-0"
+        >
+          <Card className="h-full rounded-xl border-border/60 shadow-sm transition-shadow duration-200 hover:shadow-md">
+            <CardHeader>
+              <CardTitle>Lifetime value</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CustomerStats ltv={customer.lifetimeValue} />
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card className="rounded-xl border-border/60 shadow-sm">
-          <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle>Customer Insights</CardTitle>
-              {customer.lastActiveAt ? (
-                <Badge variant="outline" className="text-xs">
-                  Last active {fmtDate(customer.lastActiveAt)}
-                </Badge>
-              ) : null}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold">Recent Orders</div>
-                <div className="text-xs text-muted-foreground">Last {Math.min(5, recentOrders.length)} orders</div>
+        <motion.div
+          variants={staggerCardVariants}
+          whileHover={{ y: -4, transition: cardHoverTransition }}
+          className="min-h-0"
+        >
+          <Card className="h-full rounded-xl border-border/60 shadow-sm transition-shadow duration-200 hover:shadow-md">
+            <CardHeader>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <CardTitle>Customer Insights</CardTitle>
+                {customer.lastActiveAt ? (
+                  <Badge variant="outline" className="text-xs">
+                    Last active {fmtDate(customer.lastActiveAt)}
+                  </Badge>
+                ) : null}
               </div>
-              <div className="mt-3 space-y-2">
-                {recentOrders.length ? (
-                  recentOrders.map((o) => (
-                    <div key={o.id} className="flex items-center justify-between gap-3 text-sm">
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.32, delay: 0.08, ease: [0.25, 0.1, 0.25, 1] }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold">Recent Orders</div>
+                  <div className="text-xs text-muted-foreground">Last {Math.min(5, recentOrders.length)} orders</div>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {recentOrders.length ? (
+                    recentOrders.map((o) => (
+                      <div key={o.id} className="flex items-center justify-between gap-3 text-sm">
                       <div className="min-w-0">
                         <div className="font-medium truncate">
                           <span className="font-mono">#{o.id}</span>
@@ -128,44 +163,64 @@ export function CustomerDetailsPage() {
                       </div>
                     </div>
                   ))
-                ) : (
-                  <div className="text-sm text-muted-foreground py-2">No orders yet.</div>
-                )}
-              </div>
-            </div>
-
-            <div className="h-px bg-border" />
-
-            <div>
-              <div className="text-sm font-semibold">Delivery Overview</div>
-              <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                <div className="rounded-lg border border-border/60 p-3">
-                  <div className="text-muted-foreground text-xs">Total</div>
-                  <div className="text-lg font-semibold tabular-nums">{deliveryOverview.total}</div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground py-2">No orders yet.</div>
+                  )}
                 </div>
-                <div className="rounded-lg border border-border/60 p-3">
-                  <div className="text-muted-foreground text-xs">In transit</div>
-                  <div className="text-lg font-semibold tabular-nums">{deliveryOverview.inTransit}</div>
-                </div>
-                <div className="rounded-lg border border-border/60 p-3">
-                  <div className="text-muted-foreground text-xs">Delivered</div>
-                  <div className="text-lg font-semibold tabular-nums">{deliveryOverview.delivered}</div>
-                </div>
-                <div className="rounded-lg border border-border/60 p-3">
-                  <div className="text-muted-foreground text-xs">Cancelled</div>
-                  <div className="text-lg font-semibold tabular-nums">{deliveryOverview.cancelled}</div>
-                </div>
-              </div>
-            </div>
+              </motion.div>
 
-            <div className="h-px bg-border" />
+              <div className="h-px bg-border" />
 
-            <div>
-              <div className="text-sm font-semibold">Activity Timeline</div>
-              <div className="mt-3 space-y-3">
-                {timeline.length ? (
-                  timeline.map((t, idx) => (
-                    <div key={`${t.label}-${idx}`} className="flex gap-3">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.32, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+              >
+                <div className="text-sm font-semibold">Delivery Overview</div>
+                <motion.div
+                  className="mt-3 grid grid-cols-2 gap-3 text-sm"
+                  variants={staggerTilesParentVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  <motion.div variants={staggerTileVariants} className="rounded-lg border border-border/60 p-3">
+                    <div className="text-muted-foreground text-xs">Total</div>
+                    <div className="text-lg font-semibold tabular-nums">{deliveryOverview.total}</div>
+                  </motion.div>
+                  <motion.div variants={staggerTileVariants} className="rounded-lg border border-border/60 p-3">
+                    <div className="text-muted-foreground text-xs">In transit</div>
+                    <div className="text-lg font-semibold tabular-nums">{deliveryOverview.inTransit}</div>
+                  </motion.div>
+                  <motion.div variants={staggerTileVariants} className="rounded-lg border border-border/60 p-3">
+                    <div className="text-muted-foreground text-xs">Delivered</div>
+                    <div className="text-lg font-semibold tabular-nums">{deliveryOverview.delivered}</div>
+                  </motion.div>
+                  <motion.div variants={staggerTileVariants} className="rounded-lg border border-border/60 p-3">
+                    <div className="text-muted-foreground text-xs">Cancelled</div>
+                    <div className="text-lg font-semibold tabular-nums">{deliveryOverview.cancelled}</div>
+                  </motion.div>
+                </motion.div>
+              </motion.div>
+
+              <div className="h-px bg-border" />
+
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.32, delay: 0.12, ease: [0.25, 0.1, 0.25, 1] }}
+              >
+                <div className="text-sm font-semibold">Activity Timeline</div>
+                <div className="mt-3 space-y-3">
+                  {timeline.length ? (
+                    timeline.map((t, idx) => (
+                      <motion.div
+                        key={`${t.label}-${idx}`}
+                        custom={idx}
+                        variants={timelineItemVariants}
+                        initial="hidden"
+                        animate="visible"
+                        className="flex gap-3"
+                      >
                       <div className="flex flex-col items-center">
                         <div
                           className={[
@@ -175,21 +230,22 @@ export function CustomerDetailsPage() {
                         />
                         {idx !== timeline.length - 1 ? <div className="mt-1 h-full w-px bg-border" /> : null}
                       </div>
-                      <div className="min-w-0 pb-1">
-                        <div className="text-sm font-medium truncate">{t.label}</div>
-                        <div className="text-xs text-muted-foreground">{fmtDate(t.date)}</div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-sm text-muted-foreground py-2">No recent activity.</div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+                        <div className="min-w-0 pb-1">
+                          <div className="text-sm font-medium truncate">{t.label}</div>
+                          <div className="text-xs text-muted-foreground">{fmtDate(t.date)}</div>
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-muted-foreground py-2">No recent activity.</div>
+                  )}
+                </div>
+              </motion.div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   )
 }
 

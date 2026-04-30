@@ -25,6 +25,10 @@ export type CreateServiceProviderBody = {
   price: number
   packageDetails: string[]
   deliveryTime: string
+  /** When true, ignore `countries` (global availability). */
+  allCountries: boolean
+  /** ISO 3166-1 alpha-2 codes; empty when `allCountries`. */
+  countries: string[]
   role: Extract<UserRole, 'service'>
 }
 
