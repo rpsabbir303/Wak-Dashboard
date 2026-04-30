@@ -27,6 +27,10 @@ export type Product = {
   mainImageIndex?: number
   rating?: number
   highlights?: { title: string; value: string }[]
+  /** When true, product is available globally; `productCountries` ignored. */
+  allCountries?: boolean
+  /** ISO country codes when not `allCountries`. */
+  productCountries?: string[]
 }
 
 export type ServicePackage = {
@@ -141,6 +145,28 @@ export type Delivery = {
   trackingId?: string
   trackingStatus?: string
   createdAt: string
+  /** Approximate route distance in km */
+  distanceKm?: number
+  driverPhone?: string
+  vehicleType?: string
+  vehicleNumber?: string
+  /** Live driver position (when available) */
+  currentLat?: number
+  currentLng?: number
+  currentAddress?: string
+  lastLocationUpdatedAt?: string
+  /** ISO time per lifecycle step */
+  timelineAt?: Partial<Record<DeliveryDriverStatus, string>>
+  deliveryFee?: number
+  deliveryPaid?: boolean
+  paymentMethod?: string
+  customerNote?: string
+  deliveryInstructions?: string
+  /** Denormalized order summary for delivery UIs */
+  orderLineItemName?: string
+  orderCustomerName?: string
+  orderCustomerPhone?: string
+  orderCustomerEmail?: string
 }
 
 export type AnalyticsSummary = {

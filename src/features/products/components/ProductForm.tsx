@@ -8,12 +8,14 @@ import { Switch } from '@/shared/ui/switch'
 import { Textarea } from '@/shared/ui/textarea'
 import { Alert, AlertDescription } from '@/shared/ui/alert'
 import { cn } from '@/shared/utils/utils'
+import { CountryMultiSelect, isCountrySelectionValid, type ServiceCountrySelection } from '@/shared/components/CountryMultiSelect'
 import { ImageUploader, type ImageUploaderValue } from './ImageUploader'
 import { HighlightsInput, type HighlightRow } from './HighlightsInput'
 
 export type ProductFormValues = {
   name: string
   category: string
+  countrySelection: ServiceCountrySelection
   price: string
   discount: string
   description: string
@@ -29,6 +31,7 @@ export type ProductFormValues = {
 const DEFAULT_VALUES: ProductFormValues = {
   name: '',
   category: '',
+  countrySelection: { mode: 'multi', allCountries: false, countryCodes: [] },
   price: '',
   discount: '',
   description: '',
@@ -77,6 +80,9 @@ export function ProductForm({
   function validate(): string[] {
     const e: string[] = []
     if (!v.name.trim()) e.push('Product name is required.')
+    if (!isCountrySelectionValid(v.countrySelection)) {
+      e.push('Select at least one country or all countries.')
+    }
     if (!String(v.price).trim()) e.push('Price is required.')
     if (!Number.isFinite(Number(v.price))) e.push('Price must be a number.')
     if (totalImages < 1) e.push('At least 1 image is required.')
@@ -87,6 +93,11 @@ export function ProductForm({
     const fd = new FormData()
     fd.set('name', v.name.trim())
     fd.set('category', v.category.trim())
+    fd.set('allCountries', String(Boolean(v.countrySelection.allCountries)))
+    fd.set(
+      'countries',
+      JSON.stringify(v.countrySelection.allCountries ? [] : v.countrySelection.countryCodes),
+    )
     fd.set('price', String(Number(v.price)))
     fd.set('discount', v.discount ? String(Number(v.discount)) : '0')
     fd.set('description', v.description)
@@ -171,6 +182,22 @@ export function ProductForm({
                   onChange={(e) => setV((s) => ({ ...s, category: e.target.value }))}
                   placeholder="e.g. Accessories"
                   className="rounded-lg border border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#895129]"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-gray-700" htmlFor="product-country">
+                  Product Country
+                </Label>
+                <CountryMultiSelect
+                  id="product-country"
+                  value={v.countrySelection}
+                  onChange={(countrySelection) => {
+                    setV((s) => ({ ...s, countrySelection }))
+                    setErrors((prev) => prev.filter((m) => !m.toLowerCase().includes('country')))
+                  }}
+                  error={
+                    errors.some((m) => m.toLowerCase().includes('country')) ? 'Select at least one country or all countries.' : undefined
+                  }
                 />
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

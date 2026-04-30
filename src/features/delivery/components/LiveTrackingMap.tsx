@@ -47,10 +47,18 @@ export function LiveTrackingMap({
   pickupText,
   dropText,
   driverText,
+  driverLat,
+  driverLng,
+  currentAddress,
+  lastUpdatedAt,
 }: {
   pickupText: string
   dropText: string
   driverText?: string | null
+  driverLat?: number | null
+  driverLng?: number | null
+  currentAddress?: string | null
+  lastUpdatedAt?: string | null
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
@@ -61,7 +69,17 @@ export function LiveTrackingMap({
   const token = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined
   const [pickup, setPickup] = useState<LngLat | null>(() => parseLatLngFromText(pickupText))
   const [drop, setDrop] = useState<LngLat | null>(() => parseLatLngFromText(dropText))
-  const [driver, setDriver] = useState<LngLat | null>(() => parseLatLngFromText(driverText ?? '') ?? null)
+  const [driver, setDriver] = useState<LngLat | null>(() => {
+    if (
+      driverLat != null &&
+      driverLng != null &&
+      Number.isFinite(driverLat) &&
+      Number.isFinite(driverLng)
+    ) {
+      return { lng: driverLng, lat: driverLat }
+    }
+    return parseLatLngFromText(driverText ?? '') ?? null
+  })
 
   useEffect(() => {
     setPickup(parseLatLngFromText(pickupText))
@@ -70,8 +88,17 @@ export function LiveTrackingMap({
     setDrop(parseLatLngFromText(dropText))
   }, [dropText])
   useEffect(() => {
+    if (
+      driverLat != null &&
+      driverLng != null &&
+      Number.isFinite(driverLat) &&
+      Number.isFinite(driverLng)
+    ) {
+      setDriver({ lng: driverLng, lat: driverLat })
+      return
+    }
     setDriver(parseLatLngFromText(driverText ?? '') ?? null)
-  }, [driverText])
+  }, [driverText, driverLat, driverLng])
 
   useEffect(() => {
     if (!token) return
@@ -227,6 +254,21 @@ export function LiveTrackingMap({
         </div>
         <div className="font-semibold">{etaMinutes != null ? `ETA ~ ${etaMinutes} min` : 'ETA —'}</div>
       </div>
+      {(driverLat != null && driverLng != null && Number.isFinite(driverLat) && Number.isFinite(driverLng)) ||
+      currentAddress ||
+      lastUpdatedAt ? (
+        <div className="space-y-1 rounded-lg border border-gray-200/80 bg-muted/30 px-3 py-2 text-xs text-gray-700">
+          {driverLat != null && driverLng != null && Number.isFinite(driverLat) && Number.isFinite(driverLng) ? (
+            <div className="font-mono tabular-nums">
+              Current: {driverLat.toFixed(5)}, {driverLng.toFixed(5)}
+            </div>
+          ) : null}
+          {currentAddress ? <div>{currentAddress}</div> : null}
+          {lastUpdatedAt ? (
+            <div className="text-muted-foreground">Last updated {new Date(lastUpdatedAt).toLocaleString()}</div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }

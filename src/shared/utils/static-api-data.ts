@@ -26,6 +26,22 @@ type CreateDeliveryRequestBody = {
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+function parseProductAvailabilityFromFormData(fd: FormData): Pick<Product, 'allCountries' | 'productCountries'> {
+  const allCountries = fd.get('allCountries') === 'true'
+  let codes: string[] = []
+  const raw = String(fd.get('countries') ?? '[]')
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (Array.isArray(parsed)) codes = parsed.map((x) => String(x)).filter(Boolean)
+  } catch {
+    codes = []
+  }
+  if (allCountries) {
+    return { allCountries: true, productCountries: [] }
+  }
+  return { allCountries: false, productCountries: codes }
+}
+
 const IMG = 'https://placehold.co/200x200/png?text=Product'
 
 function makeProducts(): Product[] {
@@ -43,6 +59,8 @@ function makeProducts(): Product[] {
       imageUrls: [IMG],
       mainImageIndex: 0,
       rating: 4.6,
+      allCountries: true,
+      productCountries: [],
       highlights: [
         { title: 'Material', value: 'Borosilicate glass' },
         { title: 'Capacity', value: '1.2L' },
@@ -61,6 +79,8 @@ function makeProducts(): Product[] {
       imageUrls: [IMG],
       mainImageIndex: 0,
       rating: 4.2,
+      allCountries: false,
+      productCountries: ['US', 'CA'],
       highlights: [
         { title: 'Color', value: 'Matte black' },
         { title: 'Brightness', value: '3 levels' },
@@ -78,6 +98,8 @@ function makeProducts(): Product[] {
       imageUrls: [],
       mainImageIndex: 0,
       rating: 4.0,
+      allCountries: false,
+      productCountries: ['US'],
       highlights: [{ title: 'Pages', value: '120' }],
     },
   ]
@@ -172,6 +194,25 @@ const store = {
       status: 'delivery_requested' as const,
       createdAt: iso(new Date(2025, 3, 2)),
     },
+    {
+      id: 'po-3',
+      type: 'product' as const,
+      productId: 'p3',
+      productName: 'Notebook pack',
+      customerName: 'Samira Ali',
+      customer: {
+        name: 'Samira Ali',
+        phone: '+8801711122233',
+        email: 'samira@example.com',
+        address: 'Port City Logistics, Chittagong 4100, Bangladesh',
+      },
+      items: [{ name: 'Notebook pack', quantity: 2, price: 8.5 }],
+      deliveryType: 'international',
+      total: 17,
+      quantity: 2,
+      status: 'shipment_created' as const,
+      createdAt: iso(new Date(2025, 3, 3)),
+    },
   ] as ProductOrder[],
   serviceOrders: [
     {
@@ -204,9 +245,32 @@ const store = {
       type: 'local',
       driverStatus: 'in_transit' as const,
       deliveryStatus: 'in_transit' as const,
-      pickupLocation: 'Gulshan 1, Dhaka',
-      dropLocation: 'Banani, Dhaka',
+      pickupLocation: 'Gulshan 1, Dhaka 1212, Bangladesh',
+      dropLocation: 'Banani Road 11, Dhaka 1213, Bangladesh',
       etaMinutes: 25,
+      distanceKm: 6.2,
+      driverPhone: '+8801911002233',
+      vehicleType: 'bike',
+      vehicleNumber: 'DHK-B-10294',
+      currentLat: 23.7937,
+      currentLng: 90.4042,
+      currentAddress: 'Near Gulshan 2 circle',
+      lastLocationUpdatedAt: iso(new Date()),
+      deliveryFee: 5,
+      deliveryPaid: false,
+      paymentMethod: 'Cash on delivery',
+      customerNote: 'Please ring the doorbell twice.',
+      deliveryInstructions: 'Call the customer about 10 minutes before arrival.',
+      orderLineItemName: 'Desk lamp',
+      orderCustomerName: 'Liam Hossain',
+      orderCustomerPhone: '+8801XXXXXXXXX',
+      orderCustomerEmail: 'liam@example.com',
+      timelineAt: {
+        requested: iso(new Date(2025, 3, 2, 8, 5)),
+        accepted: iso(new Date(2025, 3, 2, 8, 18)),
+        picked_up: iso(new Date(2025, 3, 2, 8, 45)),
+        in_transit: iso(new Date(2025, 3, 2, 9, 2)),
+      },
       createdAt: iso(new Date(2025, 3, 2)),
     },
     {
@@ -214,13 +278,61 @@ const store = {
       orderId: 'po-1',
       vendorId: 'v1',
       driverName: 'Rashida Begum',
+      driverId: 'dr2',
       type: 'local',
       driverStatus: 'accepted' as const,
       deliveryStatus: 'accepted' as const,
-      pickupLocation: 'Tejgaon',
-      dropLocation: 'Dhanmondi',
+      pickupLocation: 'Vendor hub, Tejgaon Industrial Area, Dhaka 1208',
+      dropLocation: 'House 12, Road 3, Dhanmondi, Dhaka 1205',
       etaMinutes: 40,
+      distanceKm: 8.5,
+      driverPhone: '+8801811223344',
+      vehicleType: 'car',
+      vehicleNumber: 'DHK-M-8812',
+      deliveryFee: 5,
+      deliveryPaid: true,
+      paymentMethod: 'Wak Wallet',
+      customerNote: '—',
+      deliveryInstructions: 'Gate code 4521. Park in visitor slot B.',
+      orderLineItemName: 'Cold brew set',
+      orderCustomerName: 'Asha Rahman',
+      orderCustomerPhone: '+8801XXXXXXXXX',
+      orderCustomerEmail: 'asha@example.com',
+      timelineAt: {
+        requested: iso(new Date(2025, 3, 1, 10, 0)),
+        accepted: iso(new Date(2025, 3, 1, 10, 22)),
+      },
       createdAt: iso(new Date(2025, 3, 1)),
+    },
+    {
+      id: 'd3',
+      orderId: 'po-3',
+      vendorId: 'v1',
+      type: 'international',
+      driverStatus: 'picked_up' as const,
+      deliveryStatus: 'picked_up' as const,
+      pickupLocation: 'Warehouse 4, Tejgaon Industrial Area, Dhaka 1208, Bangladesh',
+      dropLocation: 'Port City Logistics, Chittagong 4100, Bangladesh',
+      etaMinutes: 2880,
+      distanceKm: 264,
+      courier: 'DHL',
+      trackingId: 'DHL-7782910463',
+      trackingStatus: 'In Transit',
+      deliveryFee: 15,
+      deliveryPaid: true,
+      paymentMethod: 'Card · Visa *4242',
+      customerNote: 'Fragile — handle with care.',
+      deliveryInstructions: 'Deliver to warehouse receiving dock.',
+      orderLineItemName: 'Notebook pack',
+      orderCustomerName: 'Samira Ali',
+      orderCustomerPhone: '+8801711122233',
+      orderCustomerEmail: 'samira@example.com',
+      timelineAt: {
+        requested: iso(new Date(2025, 3, 3, 9, 0)),
+        accepted: iso(new Date(2025, 3, 3, 9, 25)),
+        picked_up: iso(new Date(2025, 3, 3, 11, 0)),
+      },
+      createdAt: iso(new Date(2025, 3, 3)),
     },
   ] as Delivery[],
   messagesByConvo: {
@@ -290,11 +402,27 @@ const store = {
   } as Record<string, Milestone[]>,
 }
 
+function enrichDeliveryFromOrder(d: Delivery) {
+  const po = store.productOrders.find((x) => x.id === d.orderId)
+  const so = store.serviceOrders.find((x) => x.id === d.orderId)
+  if (po) {
+    if (!d.orderLineItemName) d.orderLineItemName = po.productName
+    if (!d.orderCustomerName) d.orderCustomerName = po.customer?.name ?? po.customerName
+    if (!d.orderCustomerPhone) d.orderCustomerPhone = po.customer?.phone
+    if (!d.orderCustomerEmail) d.orderCustomerEmail = po.customer?.email
+  } else if (so) {
+    if (!d.orderLineItemName) d.orderLineItemName = so.serviceName
+    if (!d.orderCustomerName) d.orderCustomerName = so.customer?.name ?? so.customerName
+    if (!d.orderCustomerPhone) d.orderCustomerPhone = so.customer?.phone
+    if (!d.orderCustomerEmail) d.orderCustomerEmail = so.customer?.email
+  }
+}
+
 const analyticsSummary: AnalyticsSummary = {
   totalRevenue: 128500,
   productSales: 82000,
   serviceEarnings: 46500,
-  productOrders: 2,
+  productOrders: 3,
   serviceOrders: 1,
   productsCount: store.products.length,
   servicesCount: store.services.length,
@@ -581,6 +709,7 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
         mainImageIndex: Number.isFinite(mainImageIndex) ? mainImageIndex : 0,
         rating: Number.isFinite(rating) ? rating : 4.5,
         highlights,
+        ...parseProductAvailabilityFromFormData(fd),
       }
       store.products.push(newP)
       return { data: { ...newP } }
@@ -627,6 +756,7 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
             mainImageIndex: Number(fd.get('mainImageIndex') || store.products[i]!.mainImageIndex || 0),
             rating: Number(fd.get('rating') || store.products[i]!.rating || 4.5),
             highlights,
+            ...parseProductAvailabilityFromFormData(fd),
           }
           return { data: { ...store.products[i]! } }
         }
@@ -828,6 +958,7 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
     }
     if (p.method === 'POST' && path === '/delivery/request') {
       const b = p.body as CreateDeliveryRequestBody
+      const now = new Date().toISOString()
       const d: Delivery = {
         id: `d${++nextId}`,
         orderId: b.order_id,
@@ -838,8 +969,13 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
         deliveryStatus: 'requested',
         pickupLocation: b.pickup_location,
         dropLocation: b.drop_location,
-        createdAt: new Date().toISOString(),
+        createdAt: now,
+        deliveryFee: 5,
+        deliveryPaid: false,
+        paymentMethod: 'Pending',
+        timelineAt: { requested: now },
       }
+      enrichDeliveryFromOrder(d)
       store.deliveries.push(d)
       const o = store.productOrders.find((x) => x.id === b.order_id)
       if (o) {
@@ -859,6 +995,7 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
         drop_location: string
         vendor_id: string
       }
+      const nowIntl = new Date().toISOString()
       const d: Delivery = {
         id: `d${++nextId}`,
         orderId: b.order_id,
@@ -868,11 +1005,21 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
         deliveryStatus: 'requested',
         pickupLocation: b.pickup_location,
         dropLocation: b.drop_location,
-        courier: (b.courier.toUpperCase() as 'DHL' | 'FEDEX' | 'UPS') === 'FEDEX' ? 'FedEx' : (b.courier.toUpperCase() as any),
+        courier: ((): Delivery['courier'] => {
+          const c = b.courier.toLowerCase()
+          if (c === 'fedex') return 'FedEx'
+          if (c === 'ups') return 'UPS'
+          return 'DHL'
+        })(),
         trackingId: `TRK-${Math.floor(Math.random() * 900000 + 100000)}`,
         trackingStatus: 'Shipment Created',
-        createdAt: new Date().toISOString(),
+        createdAt: nowIntl,
+        deliveryFee: 15,
+        deliveryPaid: false,
+        paymentMethod: 'Pending',
+        timelineAt: { requested: nowIntl },
       }
+      enrichDeliveryFromOrder(d)
       store.deliveries.push(d)
       const o = store.productOrders.find((x) => x.id === b.order_id)
       if (o) {
@@ -891,7 +1038,11 @@ export async function getStaticRequestResult(args: string | FetchArgs): Promise<
       const b = p.body as { driverStatus?: string; deliveryStatus?: string }
       const d = store.deliveries.find((x) => x.id === id)
       if (d && b.driverStatus) {
-        d.driverStatus = b.driverStatus as Delivery['driverStatus']
+        const st = b.driverStatus as Delivery['driverStatus']
+        const ts = new Date().toISOString()
+        d.timelineAt = { ...(d.timelineAt ?? {}) }
+        if (!d.timelineAt[st]) d.timelineAt[st] = ts
+        d.driverStatus = st
         d.deliveryStatus = (b.deliveryStatus as Delivery['deliveryStatus']) || d.deliveryStatus
         if (d.type === 'international') {
           const map: Record<string, string> = {

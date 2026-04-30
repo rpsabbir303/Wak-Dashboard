@@ -1,9 +1,15 @@
+import { motion } from 'framer-motion'
 import type { Delivery } from '@/shared/types/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Badge } from '@/shared/ui/badge'
+import {
+  orderDetailsDeliveryStatusBodyVariants,
+  orderDetailsStatusBadgeVariants,
+} from '@/features/orders/motion/order-details-variants'
 
 export function DeliveryStatusCard({ delivery }: { delivery: Delivery }) {
   const isIntl = delivery.type === 'international'
+  const statusKey = `${delivery.deliveryStatus}-${delivery.driverStatus ?? ''}-${delivery.trackingStatus ?? ''}`
 
   return (
     <Card className="rounded-xl border-border/60 shadow-sm">
@@ -12,13 +18,35 @@ export function DeliveryStatusCard({ delivery }: { delivery: Delivery }) {
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" className="capitalize">
-            {delivery.type ?? 'local'}
-          </Badge>
+          <motion.div
+            key={`type-${delivery.type}`}
+            variants={orderDetailsStatusBadgeVariants}
+            initial="initial"
+            animate="animate"
+          >
+            <Badge variant="secondary" className="capitalize">
+              {delivery.type ?? 'local'}
+            </Badge>
+          </motion.div>
           <span className="text-muted-foreground">·</span>
-          <span className="font-medium capitalize">{delivery.deliveryStatus}</span>
+          <motion.span
+            key={delivery.deliveryStatus}
+            className="font-medium capitalize"
+            variants={orderDetailsStatusBadgeVariants}
+            initial="initial"
+            animate="animate"
+          >
+            {delivery.deliveryStatus}
+          </motion.span>
         </div>
 
+        <motion.div
+          key={statusKey}
+          className="space-y-3"
+          variants={orderDetailsDeliveryStatusBodyVariants}
+          initial="hidden"
+          animate="visible"
+        >
         {!isIntl ? (
           <>
             <div>
@@ -52,6 +80,7 @@ export function DeliveryStatusCard({ delivery }: { delivery: Delivery }) {
             </div>
           </div>
         )}
+        </motion.div>
       </CardContent>
     </Card>
   )

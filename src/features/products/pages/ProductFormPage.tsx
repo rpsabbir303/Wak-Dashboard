@@ -2,10 +2,38 @@ import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useCreateProductMutation, useGetProductQuery, useUpdateProductMutation } from '@/features/products'
-import { Skeleton } from '@/shared/ui/skeleton'
 import { ProductForm, type ProductFormValues } from '@/features/products/components/ProductForm'
+import { Skeleton } from '@/shared/ui/skeleton'
+import { isCountrySelectionValid, type ServiceCountrySelection } from '@/shared/components/CountryMultiSelect'
+import type { Product } from '@/shared/types/api'
+import {
+  readServiceLocationFromLocalStorage,
+  readVendorServiceLocationFromLocalStorage,
+} from '@/shared/utils/service-provider-profile-storage'
+
+function defaultNewProductCountrySelection(): ServiceCountrySelection {
+  const vendor = readVendorServiceLocationFromLocalStorage()
+  if (isCountrySelectionValid(vendor)) return vendor
+  const service = readServiceLocationFromLocalStorage()
+  if (isCountrySelectionValid(service)) return service
+  return vendor
+}
 
 type Props = { mode: 'create' | 'edit' }
+
+function productToCountrySelection(p: Product): ServiceCountrySelection {
+  if (p.allCountries) {
+    return { mode: 'multi', allCountries: true, countryCodes: [] }
+  }
+  const codes = p.productCountries ?? []
+  if (codes.length === 0) {
+    return { mode: 'multi', allCountries: true, countryCodes: [] }
+  }
+  if (codes.length === 1) {
+    return { mode: 'single', allCountries: false, countryCodes: codes }
+  }
+  return { mode: 'multi', allCountries: false, countryCodes: codes }
+}
 
 export function ProductFormPage({ mode }: Props) {
   const { id } = useParams()
@@ -33,6 +61,7 @@ export function ProductFormPage({ mode }: Props) {
       ? {
           name: data.name,
           category: data.category ?? '',
+          countrySelection: productToCountrySelection(data),
           price: String(data.price ?? ''),
           discount: data.discount != null ? String(data.discount) : '',
           description: data.description ?? '',
@@ -44,7 +73,9 @@ export function ProductFormPage({ mode }: Props) {
           mainImageIndex: data.mainImageIndex ?? 0,
           highlights: data.highlights ?? [],
         }
-      : undefined
+      : mode === 'create'
+        ? { countrySelection: defaultNewProductCountrySelection() }
+        : undefined
 
   return (
     <ProductForm

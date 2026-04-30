@@ -1,5 +1,7 @@
+import { motion } from 'framer-motion'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { OrderStatusBadge } from '@/shared/components/status-badge'
+import { orderDetailsStatusBadgeVariants } from '@/features/orders/motion/order-details-variants'
 import type { ProductOrderStatus, ServiceOrderStatus } from '@/shared/types/api'
 
 const productFlow = ['pending', 'confirmed', 'processing', 'ready', 'delivery_requested', 'shipment_created', 'delivered'] as const
@@ -52,7 +54,15 @@ export function StatusDropdown({
           ))}
         </SelectContent>
       </Select>
-      <OrderStatusBadge status={value as never} />
+      <motion.div
+        key={String(value)}
+        variants={orderDetailsStatusBadgeVariants}
+        initial="initial"
+        animate="animate"
+        className="inline-flex"
+      >
+        <OrderStatusBadge status={value as never} />
+      </motion.div>
     </div>
   )
 }

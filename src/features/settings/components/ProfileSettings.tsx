@@ -8,6 +8,11 @@ import { Textarea } from '@/shared/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import type { UserProfile } from '@/shared/types/api'
 import { useUpdateProfileMutation } from '@/features/auth'
+import { CountryMultiSelect, type ServiceCountrySelection } from '@/shared/components/CountryMultiSelect'
+import {
+  readVendorServiceLocationFromLocalStorage,
+  writeVendorServiceLocationToLocalStorage,
+} from '@/shared/utils/service-provider-profile-storage'
 
 const VENDOR_ONBOARDING_STORAGE_KEY = 'vendor_onboarding_v1'
 
@@ -55,7 +60,6 @@ export function ProfileSettings({ profile }: { profile: UserProfile | undefined 
       email: profile?.email ?? '',
       phone: String(onboarding?.phone ?? profile?.phone ?? ''),
       streetAddress: String(onboarding?.address ?? profile?.address ?? ''),
-      cityRegion: '',
       category: Array.isArray(onboarding?.category) ? String(onboarding?.category?.[0] ?? '') : String(onboarding?.category ?? ''),
       shopType: String(onboarding?.shopType ?? ''),
       approxProductCount: String(onboarding?.productCount ?? ''),
@@ -69,7 +73,7 @@ export function ProfileSettings({ profile }: { profile: UserProfile | undefined 
   const [ownerName, setOwnerName] = useState(initial.ownerName)
   const [phone, setPhone] = useState(initial.phone)
   const [streetAddress, setStreetAddress] = useState(initial.streetAddress)
-  const [cityRegion, setCityRegion] = useState(initial.cityRegion)
+  const [serviceLocation, setServiceLocation] = useState<ServiceCountrySelection>(() => readVendorServiceLocationFromLocalStorage())
   const [category, setCategory] = useState(initial.category)
   const [shopType, setShopType] = useState(initial.shopType)
   const [approxProductCount, setApproxProductCount] = useState(initial.approxProductCount)
@@ -81,7 +85,6 @@ export function ProfileSettings({ profile }: { profile: UserProfile | undefined 
     setOwnerName(initial.ownerName)
     setPhone(initial.phone)
     setStreetAddress(initial.streetAddress)
-    setCityRegion(initial.cityRegion)
     setCategory(initial.category)
     setShopType(initial.shopType)
     setApproxProductCount(initial.approxProductCount)
@@ -92,18 +95,26 @@ export function ProfileSettings({ profile }: { profile: UserProfile | undefined 
     initial.ownerName,
     initial.phone,
     initial.streetAddress,
-    initial.cityRegion,
     initial.category,
     initial.shopType,
     initial.approxProductCount,
     initial.description,
   ])
 
-  const canSave = businessName.trim().length > 0 && ownerName.trim().length > 0 && (!email || email.includes('@'))
+  useEffect(() => {
+    setServiceLocation(readVendorServiceLocationFromLocalStorage())
+  }, [profile?.id])
+
+  const canSave =
+    businessName.trim().length > 0 && ownerName.trim().length > 0 && (!email || email.includes('@'))
 
   async function onSave() {
-    if (!canSave) {
+    if (!businessName.trim() || !ownerName.trim()) {
       toast.error('Please fill required fields.')
+      return
+    }
+    if (email && !email.includes('@')) {
+      toast.error('Please use a valid email.')
       return
     }
     try {
@@ -112,10 +123,11 @@ export function ProfileSettings({ profile }: { profile: UserProfile | undefined 
         fullName: ownerName.trim(),
         email: undefined, // email is readonly in this UI
         phone: phone.trim() || undefined,
-        address: [streetAddress.trim(), cityRegion.trim()].filter(Boolean).join(', ') || undefined,
+        address: streetAddress.trim() || undefined,
       }).unwrap()
+      writeVendorServiceLocationToLocalStorage(serviceLocation)
       toast.success('Profile updated')
-    } catch (e) {
+    } catch {
       toast.error('Could not update profile')
     }
   }
@@ -155,7 +167,10 @@ export function ProfileSettings({ profile }: { profile: UserProfile | undefined 
       <Card className="rounded-xl border-border/60 shadow-sm">
         <CardHeader>
           <CardTitle>Address</CardTitle>
-          <CardDescription>Where you operate from (used for delivery and invoices).</CardDescription>
+          <CardDescription>
+            Where you operate from (used for delivery and invoices). Service location sets where you sell — same options as Add
+            Product.
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6">
           <div className="grid gap-2">
@@ -163,8 +178,12 @@ export function ProfileSettings({ profile }: { profile: UserProfile | undefined 
             <Input id="streetAddress" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} placeholder="Street address" />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="cityRegion">City / Region</Label>
-            <Input id="cityRegion" value={cityRegion} onChange={(e) => setCityRegion(e.target.value)} placeholder="City or region" />
+            <Label htmlFor="vendor-service-location">Service Location</Label>
+            <CountryMultiSelect
+              id="vendor-service-location"
+              value={serviceLocation}
+              onChange={setServiceLocation}
+            />
           </div>
         </CardContent>
       </Card>

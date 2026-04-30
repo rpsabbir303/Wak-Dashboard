@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
@@ -13,6 +14,19 @@ import { useCreateInternationalShipmentMutation, useGetDeliveryStatusQuery, useR
 import type { Order, ProductOrderStatus, ServiceOrderStatus } from '@/shared/types/api'
 import { useDeliveryRealtime } from '@/features/delivery'
 import { useGetProfileQuery } from '@/features/auth'
+import {
+  orderDetailsButtonMotionProps,
+  orderDetailsCardVariants,
+  orderDetailsCardsStaggerParentVariants,
+  orderDetailsEase,
+  orderDetailsHeaderVariants,
+  orderDetailsItemRowVariants,
+  orderDetailsItemsStaggerParentVariants,
+  orderDetailsPageLoadTransition,
+  orderDetailsPaymentVariants,
+  orderDetailsTabSpring,
+} from '@/features/orders/motion/order-details-variants'
+import { cn } from '@/shared/utils/utils'
 
 function fmtMoney(n: number) {
   return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(n)
@@ -105,16 +119,28 @@ export function OrderDetailsPage() {
   }
 
   return (
-    <div className="w-full space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <motion.div
+      className="w-full space-y-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={orderDetailsPageLoadTransition}
+    >
+      <motion.div
+        className="flex flex-wrap items-center justify-between gap-3"
+        variants={orderDetailsHeaderVariants}
+        initial="hidden"
+        animate="visible"
+      >
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold">Order #{order.id}</h1>
           <p className="text-muted-foreground text-sm">Created {new Date(order.createdAt).toLocaleString()}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" onClick={() => navigate('/vendor/orders')}>
-            Back to orders
-          </Button>
+          <motion.div className="inline-flex" {...orderDetailsButtonMotionProps}>
+            <Button type="button" variant="outline" onClick={() => navigate('/vendor/orders')}>
+              Back to orders
+            </Button>
+          </motion.div>
           <StatusDropdown
             kind={order.type}
             value={order.status}
@@ -133,237 +159,304 @@ export function OrderDetailsPage() {
             }}
           />
         </div>
-      </div>
+      </motion.div>
 
-      <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="rounded-xl border-border/60 shadow-sm">
-          <CardHeader>
-            <CardTitle>Customer details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <div className="text-muted-foreground">Name</div>
-                <div className="font-medium">{customer.name}</div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">Phone</div>
-                <div className="font-medium">{customer.phone ?? '—'}</div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">Email</div>
-                <div className="font-medium">{customer.email ?? '—'}</div>
-              </div>
-              <div className="sm:col-span-2">
-                <div className="text-muted-foreground">Address</div>
-                <div className="font-medium">{customer.address ?? '—'}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
-          <CardHeader>
-            <CardTitle>Delivery Setup</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex w-full gap-2">
-              <button
-                type="button"
-                onClick={() => setDeliveryMethod('local')}
-                className={[
-                  'flex-1 border border-gray-200 rounded-xl shadow-sm px-4 py-2 text-sm font-medium transition-colors',
-                  deliveryMethod === 'local' ? 'bg-[#895129] text-white' : 'bg-white text-gray-900 hover:bg-gray-50',
-                ].join(' ')}
-              >
-                Local Delivery
-              </button>
-              <button
-                type="button"
-                onClick={() => setDeliveryMethod('international')}
-                className={[
-                  'flex-1 border border-gray-200 rounded-xl shadow-sm px-4 py-2 text-sm font-medium transition-colors',
-                  deliveryMethod === 'international'
-                    ? 'bg-[#895129] text-white'
-                    : 'bg-white text-gray-900 hover:bg-gray-50',
-                ].join(' ')}
-              >
-                International Courier
-              </button>
-            </div>
-
-            {deliveryMethod === 'local' ? (
-              <div className="space-y-3">
-                <div className="text-xs text-gray-600">Fast delivery using nearby drivers</div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="bg-[#895129] hover:bg-[#7b4723] text-white rounded-xl shadow-sm px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
-                    disabled={busy || localRequested || isAlreadyRequested || order.type !== 'product'}
-                    onClick={async () => {
-                      try {
-                        if (order.type !== 'product') return
-                        await createLocalDelivery(order.id)
-                        setLocalRequested(true)
-                        toast.success('Local delivery requested')
-                        void deliveryQ.refetch()
-                      } catch {
-                        toast.error('Failed to request local delivery')
-                      }
-                    }}
-                  >
-                    Request Local Delivery
-                  </button>
-
-                  {(localRequested || isAlreadyRequested) && (
-                    <span className="inline-flex items-center rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-800">
-                      Requested
-                    </span>
-                  )}
-                </div>
-
-                {order.type !== 'product' ? (
-                  <div className="text-xs text-gray-600">Services don’t require delivery.</div>
-                ) : null}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="text-xs text-gray-600">Use trusted courier partners for long-distance shipping</div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-gray-700">Courier</label>
-                  <select
-                    className="w-full bg-white border border-gray-200 rounded-xl shadow-sm px-3 py-2 text-sm"
-                    value={selectedCourier}
-                    onChange={(e) => setSelectedCourier(e.target.value as CourierKey)}
-                    disabled={busy || intlRequested || isAlreadyRequested || order.type !== 'product'}
-                  >
-                    <option value="">Select a courier</option>
-                    <option value="dhl">DHL</option>
-                    <option value="fedex">FedEx</option>
-                    <option value="ups">UPS</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="bg-[#895129] hover:bg-[#7b4723] text-white rounded-xl shadow-sm px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
-                    disabled={busy || intlRequested || isAlreadyRequested || order.type !== 'product'}
-                    onClick={async () => {
-                      if (order.type !== 'product') return
-                      if (!selectedCourier) {
-                        toast.error('Please select a courier')
-                        return
-                      }
-                      try {
-                        await createInternationalDelivery(order.id, selectedCourier as Exclude<CourierKey, ''>)
-                        setIntlRequested(true)
-                        toast.success('Shipment request created')
-                        void deliveryQ.refetch()
-                      } catch {
-                        toast.error('Failed to create shipment request')
-                      }
-                    }}
-                  >
-                    Create Shipment Request
-                  </button>
-
-                  {(intlRequested || isAlreadyRequested) && (
-                    <span className="inline-flex items-center rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-800">
-                      Requested
-                    </span>
-                  )}
-                </div>
-
-                {order.type !== 'product' ? (
-                  <div className="text-xs text-gray-600">Services don’t require delivery.</div>
-                ) : null}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {deliveryQ.data ? (
-          <DeliveryStatusCard delivery={deliveryQ.data} />
-        ) : (
+      <motion.div
+        className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2"
+        variants={orderDetailsCardsStaggerParentVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div variants={orderDetailsCardVariants} className="min-h-0">
           <Card className="rounded-xl border-border/60 shadow-sm">
             <CardHeader>
-              <CardTitle>Delivery</CardTitle>
+              <CardTitle>Customer details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="text-muted-foreground">
-                {order.type === 'product'
-                  ? 'Arrange local driver or international shipment when order is Ready.'
-                  : 'Services don’t require delivery.'}
+            <CardContent className="space-y-2 text-sm">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <div className="text-muted-foreground">Name</div>
+                  <div className="font-medium">{customer.name}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Phone</div>
+                  <div className="font-medium">{customer.phone ?? '—'}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Email</div>
+                  <div className="font-medium">{customer.email ?? '—'}</div>
+                </div>
+                <div className="sm:col-span-2">
+                  <div className="text-muted-foreground">Address</div>
+                  <div className="font-medium">{customer.address ?? '—'}</div>
+                </div>
               </div>
-              {order.type === 'product' ? (
-                <Button
-                  type="button"
-                  className="bg-[#895129] hover:bg-[#7b4723]"
-                  disabled={!canArrangeDelivery}
-                  onClick={() => setDeliveryOpen(true)}
-                >
-                  Arrange Delivery
-                </Button>
-              ) : null}
             </CardContent>
           </Card>
-        )}
-      </div>
+        </motion.div>
 
-      <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="rounded-xl border-border/60 shadow-sm">
-          <CardHeader>
-            <CardTitle>Order items</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-2">
-              {items.map((it, idx) => (
-                <div key={`${it.name}-${idx}`} className="flex items-center justify-between gap-4 text-sm">
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">{it.name}</div>
-                    <div className="text-muted-foreground">Qty {it.quantity}</div>
+        <motion.div variants={orderDetailsCardVariants} className="min-h-0">
+          <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
+            <CardHeader>
+              <CardTitle>Delivery Setup</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="relative flex w-full gap-2 rounded-xl border border-gray-200 bg-gray-50/50 p-1 shadow-sm">
+                <motion.div
+                  aria-hidden
+                  className="pointer-events-none absolute top-1 bottom-1 w-[calc(50%-6px)] rounded-lg bg-[#895129] shadow-sm"
+                  initial={false}
+                  animate={{
+                    left: deliveryMethod === 'local' ? 4 : 'calc(50% + 2px)',
+                  }}
+                  transition={orderDetailsTabSpring}
+                />
+                <motion.button
+                  type="button"
+                  onClick={() => setDeliveryMethod('local')}
+                  className={cn(
+                    'relative z-10 flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200',
+                    deliveryMethod === 'local' ? 'text-white' : 'text-gray-900 hover:text-gray-950',
+                  )}
+                  animate={{ scale: deliveryMethod === 'local' ? 1.02 : 1 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                >
+                  Local Delivery
+                </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={() => setDeliveryMethod('international')}
+                  className={cn(
+                    'relative z-10 flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200',
+                    deliveryMethod === 'international' ? 'text-white' : 'text-gray-900 hover:text-gray-950',
+                  )}
+                  animate={{ scale: deliveryMethod === 'international' ? 1.02 : 1 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                >
+                  International Courier
+                </motion.button>
+              </div>
+
+              {deliveryMethod === 'local' ? (
+                <motion.div
+                  key="local-panel"
+                  className="space-y-3"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.28, ease: orderDetailsEase }}
+                >
+                  <div className="text-xs text-gray-600">Fast delivery using nearby drivers</div>
+
+                  <div className="flex items-center gap-2">
+                    <motion.div className="inline-flex" {...orderDetailsButtonMotionProps}>
+                      <button
+                        type="button"
+                        className="bg-[#895129] hover:bg-[#7b4723] text-white rounded-xl shadow-sm px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                        disabled={busy || localRequested || isAlreadyRequested || order.type !== 'product'}
+                        onClick={async () => {
+                          try {
+                            if (order.type !== 'product') return
+                            await createLocalDelivery(order.id)
+                            setLocalRequested(true)
+                            toast.success('Local delivery requested')
+                            void deliveryQ.refetch()
+                          } catch {
+                            toast.error('Failed to request local delivery')
+                          }
+                        }}
+                      >
+                        Request Local Delivery
+                      </button>
+                    </motion.div>
+
+                    {(localRequested || isAlreadyRequested) && (
+                      <span className="inline-flex items-center rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-800">
+                        Requested
+                      </span>
+                    )}
                   </div>
-                  <div className="font-medium tabular-nums">{fmtMoney(it.price * it.quantity)}</div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card className="rounded-xl border-border/60 shadow-sm">
-          <CardHeader>
-            <CardTitle>Payment</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span className="font-medium tabular-nums">{fmtMoney(subtotal)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Delivery fee</span>
-              <span className="font-medium tabular-nums">{fmtMoney(deliveryFee)}</span>
-            </div>
-            <div className="h-px bg-border my-2" />
-            <div className="flex items-center justify-between">
-              <span className="font-medium">Total</span>
-              <span className="font-semibold tabular-nums">{fmtMoney(total)}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                  {order.type !== 'product' ? (
+                    <div className="text-xs text-gray-600">Services don’t require delivery.</div>
+                  ) : null}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="intl-panel"
+                  className="space-y-3"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.28, ease: orderDetailsEase }}
+                >
+                  <div className="text-xs text-gray-600">Use trusted courier partners for long-distance shipping</div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-gray-700">Courier</label>
+                    <select
+                      className="w-full bg-white border border-gray-200 rounded-xl shadow-sm px-3 py-2 text-sm transition-[box-shadow,border-color] duration-200 focus-visible:border-[#895129]/45 focus-visible:ring-2 focus-visible:ring-[#895129]/20 focus-visible:outline-none"
+                      value={selectedCourier}
+                      onChange={(e) => setSelectedCourier(e.target.value as CourierKey)}
+                      disabled={busy || intlRequested || isAlreadyRequested || order.type !== 'product'}
+                    >
+                      <option value="">Select a courier</option>
+                      <option value="dhl">DHL</option>
+                      <option value="fedex">FedEx</option>
+                      <option value="ups">UPS</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <motion.div className="inline-flex" {...orderDetailsButtonMotionProps}>
+                      <button
+                        type="button"
+                        className="bg-[#895129] hover:bg-[#7b4723] text-white rounded-xl shadow-sm px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                        disabled={busy || intlRequested || isAlreadyRequested || order.type !== 'product'}
+                        onClick={async () => {
+                          if (order.type !== 'product') return
+                          if (!selectedCourier) {
+                            toast.error('Please select a courier')
+                            return
+                          }
+                          try {
+                            await createInternationalDelivery(order.id, selectedCourier as Exclude<CourierKey, ''>)
+                            setIntlRequested(true)
+                            toast.success('Shipment request created')
+                            void deliveryQ.refetch()
+                          } catch {
+                            toast.error('Failed to create shipment request')
+                          }
+                        }}
+                      >
+                        Create Shipment Request
+                      </button>
+                    </motion.div>
+
+                    {(intlRequested || isAlreadyRequested) && (
+                      <span className="inline-flex items-center rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-800">
+                        Requested
+                      </span>
+                    )}
+                  </div>
+
+                  {order.type !== 'product' ? (
+                    <div className="text-xs text-gray-600">Services don’t require delivery.</div>
+                  ) : null}
+                </motion.div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {deliveryQ.data ? (
+          <motion.div variants={orderDetailsCardVariants} className="min-h-0 lg:col-span-2">
+            <DeliveryStatusCard delivery={deliveryQ.data} />
+          </motion.div>
+        ) : (
+          <motion.div variants={orderDetailsCardVariants} className="min-h-0 lg:col-span-2">
+            <Card className="rounded-xl border-border/60 shadow-sm">
+              <CardHeader>
+                <CardTitle>Delivery</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="text-muted-foreground">
+                  {order.type === 'product'
+                    ? 'Arrange local driver or international shipment when order is Ready.'
+                    : 'Services don’t require delivery.'}
+                </div>
+                {order.type === 'product' ? (
+                  <motion.div className="inline-flex" {...orderDetailsButtonMotionProps}>
+                    <Button
+                      type="button"
+                      className="bg-[#895129] hover:bg-[#7b4723]"
+                      disabled={!canArrangeDelivery}
+                      onClick={() => setDeliveryOpen(true)}
+                    >
+                      Arrange Delivery
+                    </Button>
+                  </motion.div>
+                ) : null}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </motion.div>
+
+      <motion.div
+        className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2"
+        variants={orderDetailsCardsStaggerParentVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div variants={orderDetailsCardVariants} className="min-h-0">
+          <Card className="rounded-xl border-border/60 shadow-sm">
+            <CardHeader>
+              <CardTitle>Order items</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <motion.div
+                className="space-y-2"
+                variants={orderDetailsItemsStaggerParentVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                {items.map((it, idx) => (
+                  <motion.div
+                    key={`${it.name}-${idx}`}
+                    variants={orderDetailsItemRowVariants}
+                    className="flex items-center justify-between gap-4 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{it.name}</div>
+                      <div className="text-muted-foreground">Qty {it.quantity}</div>
+                    </div>
+                    <div className="font-medium tabular-nums">{fmtMoney(it.price * it.quantity)}</div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div variants={orderDetailsPaymentVariants} className="min-h-0">
+          <Card className="rounded-xl border-border/60 shadow-sm">
+            <CardHeader>
+              <CardTitle>Payment</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="font-medium tabular-nums">{fmtMoney(subtotal)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Delivery fee</span>
+                <span className="font-medium tabular-nums">{fmtMoney(deliveryFee)}</span>
+              </div>
+              <div className="h-px bg-border my-2" />
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Total</span>
+                <span className="font-semibold tabular-nums">{fmtMoney(total)}</span>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
 
       {order.type === 'service' ? (
-        <Card className="rounded-xl border-border/60 shadow-sm">
-          <CardHeader>
-            <CardTitle>Milestones</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <MilestoneList orderId={order.id} canEdit />
-          </CardContent>
-        </Card>
+        <motion.div
+          variants={orderDetailsCardVariants}
+          initial="hidden"
+          animate="visible"
+          className="min-h-0"
+        >
+          <Card className="rounded-xl border-border/60 shadow-sm">
+            <CardHeader>
+              <CardTitle>Milestones</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MilestoneList orderId={order.id} canEdit />
+            </CardContent>
+          </Card>
+        </motion.div>
       ) : null}
 
       <DeliveryModal
@@ -376,7 +469,6 @@ export function OrderDetailsPage() {
           void orderQ.refetch()
         }}
       />
-    </div>
+    </motion.div>
   )
 }
-

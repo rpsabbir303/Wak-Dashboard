@@ -34,6 +34,11 @@ export function DeliveryTimeline({ delivery }: { delivery: Delivery }) {
                 <div className={cn('text-sm font-medium', done ? 'text-foreground' : active ? 'text-foreground' : 'text-muted-foreground')}>
                   {s.label}
                 </div>
+                {delivery.timelineAt?.[s.key] ? (
+                  <div className="text-muted-foreground mt-0.5 text-xs tabular-nums">
+                    {new Date(delivery.timelineAt[s.key]!).toLocaleString()}
+                  </div>
+                ) : null}
               </div>
             </div>
           )

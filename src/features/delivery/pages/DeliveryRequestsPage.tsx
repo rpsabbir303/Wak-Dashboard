@@ -258,7 +258,7 @@ export function DeliveryRequestsPage() {
           setDetailsOpen(v)
           if (!v) setSelected(null)
         }}
-        delivery={selected}
+        delivery={selected && data ? (data.find((d) => d.id === selected.id) ?? selected) : selected}
       />
     </div>
   )
